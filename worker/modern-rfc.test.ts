@@ -48,7 +48,7 @@ describe("RFC 10008 QUERY", () => {
 describe("RFC 9530 Digest Fields and RFC 9651 serialization", () => {
   test("generates Content-Digest and Repr-Digest for both active hash algorithms", async () => {
     for (const algorithm of ["sha-256", "sha-512"] as const) {
-      const response = await app.request("/digest/" + algorithm);
+      const response = await app.request("/digest/generate/" + algorithm);
       expect(response.status).toBe(200);
       const content = new Uint8Array(await response.arrayBuffer());
       const expected = digestField(algorithm, await digestBytes(content, algorithm));
@@ -58,8 +58,8 @@ describe("RFC 9530 Digest Fields and RFC 9651 serialization", () => {
   });
 
   test("HEAD omits content but retains representation digest", async () => {
-    const get = await app.request("/digest/sha-256");
-    const head = await app.request("/digest/sha-256", { method: "HEAD" });
+    const get = await app.request("/digest/generate/sha-256");
+    const head = await app.request("/digest/generate/sha-256", { method: "HEAD" });
     expect(head.status).toBe(200);
     expect(head.headers.get("repr-digest")).toBe(get.headers.get("repr-digest"));
     expect(head.headers.get("content-digest")).not.toBe(get.headers.get("content-digest"));
@@ -128,7 +128,7 @@ describe("RFC 7240, 6266, 8187, 8288, 9651 and 9745 fixtures", () => {
     expect(spec.openapi).toBe("3.2.1");
     expect(spec.paths["/query"].query).toBeDefined();
     expect(spec.paths["/digest/verify"].post).toBeDefined();
-    expect(spec.paths["/digest/{algorithm}"].get).toBeDefined();
+    expect(spec.paths["/digest/generate/{algorithm}"].get).toBeDefined();
     const swagger = await (await app.request("/spec.json")).json() as any;
     expect(swagger.paths["/query"].query).toBeUndefined();
   });

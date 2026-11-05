@@ -87,7 +87,7 @@ export function openApi(origin: string) {
       "200": { description: "Processed safe, idempotent query", content: { "application/json": { schema: { type: "object" } } }, headers: { "Accept-Query": { schema: { type: "string" } } } },
     };
   }
-  const digest = paths["/digest/{algorithm}"]?.get as Record<string, unknown> | undefined;
+  const digest = paths["/digest/generate/{algorithm}"]?.get as Record<string, unknown> | undefined;
   if (digest) (digest.responses as Record<string, unknown>)["200"] = {
     description: "Digest-bearing content", content: { "text/plain": { schema: { type: "string" } } },
     headers: { "Content-Digest": { schema: { type: "string" } }, "Repr-Digest": { schema: { type: "string" } } },

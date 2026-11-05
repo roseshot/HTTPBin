@@ -27,7 +27,7 @@ The service exposes focused test fixtures for recently standardized behavior:
 | --- | --- | --- |
 | RFC 9457 | HTTP errors | Errors use `application/problem+json` with `type`, `title`, `status`, and `detail`. Known resources reject unsupported methods with 405 and `Allow` (RFC 9110). |
 | RFC 10008 | `QUERY /query` | Safe, idempotent JSON query fixture with `Accept-Query`; unsupported media types return 415. This fixture is intentionally `no-store`; it is not a general query engine. |
-| RFC 9530 | `/digest/{algorithm}`, `POST /digest/verify` | SHA-256 and SHA-512 `Content-Digest` and `Repr-Digest` generation, bounded request-content verification. Digests protect bytes, not identity. |
+| RFC 9530 | `/digest/generate/{algorithm}`, `POST /digest/verify` | SHA-256 and SHA-512 `Content-Digest` and `Repr-Digest` generation, bounded request-content verification. Digests protect bytes, not identity. |
 | RFC 9651 | `/structured-fields` | Structured Fields demonstration and the Byte Sequence Dictionary subset required for digest fields; no general-purpose parser is claimed. |
 | RFC 7240 | `POST /prefer` | `Prefer: return=minimal` and `Preference-Applied`. |
 | RFC 6266 / 8187 | `/download` | `Content-Disposition` attachment with UTF-8 `filename*`. |

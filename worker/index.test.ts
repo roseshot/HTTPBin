@@ -107,7 +107,7 @@ describe("HTTP response behavior", () => {
   test("returns OpenAPI and Swagger specifications", async () => {
     const openapi = await (await app.request("/openapi.json")).json() as any;
     const swagger = await (await app.request("/spec.json")).json() as any;
-    expect(openapi.openapi).toBe("3.1.0");
+    expect(openapi.openapi).toBe("3.2.1");
     expect(openapi.paths["/get"].get).toBeDefined();
     expect(swagger.swagger).toBe("2.0");
   });

@@ -61,7 +61,7 @@ app.on("QUERY", "/query", async (c) => {
 });
 
 const DIGEST_BODY = "HTTP content digest fixture\n";
-app.on(["GET", "HEAD"], "/digest/:algorithm", async (c) => {
+app.on(["GET", "HEAD"], "/digest/generate/:algorithm", async (c) => {
   const algorithm = c.req.param("algorithm").toLowerCase() as DigestAlgorithm;
   if (algorithm !== "sha-256" && algorithm !== "sha-512") return problem("Supported digests: sha-256, sha-512.", 400);
   const content = encoder.encode(DIGEST_BODY);
