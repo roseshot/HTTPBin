@@ -20,7 +20,7 @@ export const english = {
   "runtime": "Cloudflare Workers compatibility",
   "runtimeHelp": "Some wire-level headers, compression behavior, and redirect details are controlled by the Workers runtime or browser. Use cURL for raw HTTP tests.",
   "rfcLink": "View RFC coverage and limitations",
-  "footDocs": "Stateless by design · Runs on Cloudflare Workers · OpenAPI 3.1",
+  "footDocs": "Stateless by design · Runs on Cloudflare Workers · OpenAPI 3.2.1",
   "playground": "HTTP Playground",
   "live": "LIVE",
   "request": "Request",
