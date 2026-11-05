@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import app from "./index";
 import { digestBytes, digestField, matchDigestField, parseDigestDictionary, preferMinimal } from "./protocol";
+import { selectByteRanges } from "./semantics";
 
 describe("RFC 9457 and RFC 9110 error semantics", () => {
   test("returns Problem Details with an HTTP-appropriate status", async () => {
@@ -131,5 +132,39 @@ describe("RFC 7240, 6266, 8187, 8288, 9651 and 9745 fixtures", () => {
     expect(spec.paths["/digest/generate/{algorithm}"].get).toBeDefined();
     const swagger = await (await app.request("/spec.json")).json() as any;
     expect(swagger.paths["/query"].query).toBeUndefined();
+  });
+});
+
+
+describe("RFC 9110 multipart byte ranges", () => {
+  test("returns RFC-framed multipart/byteranges for two ranges", async () => {
+    const result = await app.request("/range/26", { headers: { range: "bytes=0-2, 23-25" } });
+    expect(result.status).toBe(206);
+    expect(result.headers.get("content-type")).toStartWith("multipart/byteranges; boundary=");
+    expect(result.headers.get("content-range")).toBeNull();
+    const text = await result.text();
+    expect(text).toContain("Content-Range: bytes 0-2/26\r\n\r\nabc\r\n");
+    expect(text).toContain("Content-Range: bytes 23-25/26\r\n\r\nxyz\r\n");
+    expect(Number(result.headers.get("content-length"))).toBe(new TextEncoder().encode(text).length);
+  });
+
+  test("skips unsatisfiable members, returning 206 or 416 as appropriate", async () => {
+    const mixed = await app.request("/range/10", { headers: { range: "bytes=50-100,2-4" } });
+    expect(mixed.status).toBe(206);
+    expect(mixed.headers.get("content-range")).toBe("bytes 2-4/10");
+    expect(await mixed.text()).toBe("cde");
+    const all = await app.request("/range/10", { headers: { range: "bytes=50-100,70-90" } });
+    expect(all.status).toBe(416);
+    expect(all.headers.get("content-range")).toBe("bytes */10");
+  });
+
+  test("limits amplification and preserves multipart HEAD metadata", async () => {
+    expect(selectByteRanges("bytes=0-9,0-9", 10).kind).toBe("multipart");
+    expect(selectByteRanges("bytes=0-9,0-9,0-9,0-9,0-9,0-9,0-9,0-9,0-9", 10).kind).toBe("full");
+    const response = await app.request("/range/10", { method: "HEAD", headers: { range: "bytes=0-1,4-5" } });
+    expect(response.status).toBe(206);
+    expect(response.headers.get("content-type")).toContain("multipart/byteranges");
+    expect(Number(response.headers.get("content-length"))).toBeGreaterThan(4);
+    expect(await response.text()).toBe("");
   });
 });

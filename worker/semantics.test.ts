@@ -49,8 +49,13 @@ describe("Range requests", () => {
     expect(invalid.status).toBe(416);
     expect(invalid.headers.get("content-range")).toBe("bytes */26");
     const multiple = await app.request("/range/5", { headers: { range: "bytes=0-1,3-4" } });
-    expect(multiple.status).toBe(200);
-    expect(await multiple.text()).toBe("abcde");
+    expect(multiple.status).toBe(206);
+    expect(multiple.headers.get("content-type")).toContain("multipart/byteranges; boundary=");
+    const body = await multiple.text();
+    expect(body).toContain("Content-Range: bytes 0-1/5");
+    expect(body).toContain("Content-Range: bytes 3-4/5");
+    expect(body).toContain("\r\nab\r\n");
+    expect(body).toContain("\r\nde\r\n");
     expect(selectByteRange("bytes=100-200", 5)).toEqual({ kind: "unsatisfiable" });
   });
 

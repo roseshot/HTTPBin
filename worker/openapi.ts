@@ -49,7 +49,7 @@ function operation(endpoint: Endpoint, method: string): Record<string, unknown> 
     responses: {
       "200": { description: "Successful response", ...(method === "head" || method === "options" ? {} : { content: media }) },
       "204": { description: "No content" },
-      "206": { description: "Partial content" },
+      "206": { description: "Partial content", content: { "multipart/byteranges": binary, "application/octet-stream": binary } },
       "302": { description: "Redirect" },
       "304": { description: "Not modified" },
       "400": { description: "Invalid request" },

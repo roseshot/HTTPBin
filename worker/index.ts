@@ -3,7 +3,7 @@ import { endpoints } from "../shared/endpoints";
 import { MAX_BYTES, encoder, error, escapeHtml, headersObject, inspect, intParam, json, origin, queryObject, randomBytes, requestInfo, seconds, sleep, streamed } from "./http";
 import { openApi, swagger } from "./openapi";
 import { digestAuth } from "./digest";
-import { LAST_MODIFIED, ifRangeMatches, preconditionStatus, selectByteRange } from "./semantics";
+import { LAST_MODIFIED, ifRangeMatches, preconditionStatus, selectByteRanges } from "./semantics";
 import { acceptsEncoding, negotiateImage } from "./negotiation";
 import { ACCEPT_QUERY, boundedBody, digestBytes, digestField, matchDigestField, preferMinimal, problem, type DigestAlgorithm } from "./protocol";
 
@@ -332,10 +332,32 @@ app.on(["GET", "HEAD"], "/range/:n", (c) => {
   const rangeHeader = c.req.header("range") ?? null;
   const ifRange = c.req.header("if-range");
   const shouldRange = rangeHeader !== null && (ifRange === undefined || ifRangeMatches(ifRange, etag, LAST_MODIFIED));
-  const range = selectByteRange(shouldRange ? rangeHeader : null, length);
+  const range = selectByteRanges(shouldRange ? rangeHeader : null, length);
   if (range.kind === "unsatisfiable") {
     headers.set("content-range", "bytes */" + length);
     return new Response(null, { status: 416, headers });
+  }
+
+  if (range.kind === "multipart") {
+    const boundary = "httpbin-" + crypto.randomUUID().replaceAll("-", "");
+    headers.set("content-type", "multipart/byteranges; boundary=" + boundary);
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    const append = (chunk: Uint8Array) => { chunks.push(chunk); total += chunk.byteLength; };
+    for (const part of range.parts) {
+      append(encoder.encode("--" + boundary + "\r\nContent-Type: application/octet-stream\r\nContent-Range: bytes " + part.start + "-" + part.end + "/" + length + "\r\n\r\n"));
+      const body = new Uint8Array(part.end - part.start + 1);
+      for (let index = 0; index < body.length; index++) body[index] = 97 + ((part.start + index) % 26);
+      append(body);
+      append(encoder.encode("\r\n"));
+    }
+    append(encoder.encode("--" + boundary + "--\r\n"));
+    headers.set("content-length", String(total));
+    if (c.req.method === "HEAD") return new Response(null, { status: 206, headers });
+    const content = new Uint8Array(total);
+    let offset = 0;
+    for (const chunk of chunks) { content.set(chunk, offset); offset += chunk.byteLength; }
+    return new Response(content, { status: 206, headers });
   }
 
   const start = range.kind === "partial" ? range.start : 0;

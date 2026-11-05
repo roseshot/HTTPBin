@@ -46,7 +46,7 @@ The OpenAPI description is upgraded to **OpenAPI 3.2.1**, which can express `QUE
 - Cookie examples validate names, encode values, and apply `Secure` over HTTPS. They are not a session-management service.
 - `/image` negotiates by `Accept` and emits `Vary: Accept`; explicit format paths return their selected format. Compression fixtures use `Accept-Encoding` and `Vary: Accept-Encoding`.
 - `/cache` and `/cache/{n}` emit fixed representations independent of Authorization or other request headers. `/etag/{etag}` is a fixed conditional-response fixture. In contrast, inspector and random-response endpoints use `Cache-Control: no-store`.
-- `/range/{n}` supports one byte range. Multiple ranges are deliberately ignored and produce a complete 200 response; multipart/byteranges remains unimplemented.
+- `/range/{n}` supports single and multiple byte ranges, including suffixes and If-Range validation. Multiple satisfiable ranges produce `multipart/byteranges` (up to eight ranges, with an output cap); abusive ranges are ignored in favor of 200.
 - `/stream/{n}` emits `application/x-ndjson`. `/stream-bytes/{n}` and `/drip` demonstrate incremental delivery. Transfer coding, stream chunk boundaries observed by clients, and connection framing are controlled by the runtime.
 - Generated data is limited to 1 MiB, streams to 100 records, redirect chains to 20, and delays to 10 seconds. Oversized size parameters are rejected instead of silently truncated.
 

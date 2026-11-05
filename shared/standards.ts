@@ -13,8 +13,8 @@ export const standards: StandardCoverage[] = [
     rfc: 9110,
     title: "HTTP Semantics",
     level: "subset",
-    implemented: "Methods and status codes, HEAD and OPTIONS, redirects, conditional requests, single byte ranges, and selected content negotiation.",
-    missing: "Multiple byte ranges, informational 1xx responses, and general-purpose representation negotiation are not implemented.",
+    implemented: "Methods and status codes, HEAD and OPTIONS, redirects, conditional requests, single and multipart byte ranges, and selected content negotiation.",
+    missing: "Informational 1xx responses and general-purpose representation negotiation are not implemented; multipart ranges have strict resource caps.",
   },
   {
     rfc: 9111,

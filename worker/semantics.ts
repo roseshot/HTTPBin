@@ -67,3 +67,28 @@ export function selectByteRange(header: string | null, length: number): ByteRang
   const end = first === null ? length - 1 : Math.min(last ?? length - 1, length - 1);
   return { kind: "partial", start, end };
 }
+
+
+export type SelectedByteRanges = ByteRange | { kind: "multipart"; parts: { start: number; end: number }[] };
+
+// RFC 9110: limit range count and total represented bytes to avoid amplification.
+export function selectByteRanges(header: string | null, length: number): SelectedByteRanges {
+  if (header === null || !header.includes(",")) return selectByteRange(header, length);
+  const trimmed = header.trim();
+  if (!trimmed.startsWith("bytes=")) return { kind: "full" };
+  const specs = trimmed.slice(6).split(",");
+  if (specs.length < 2 || specs.length > 8) return { kind: "full" };
+  const parts: { start: number; end: number }[] = [];
+  let total = 0;
+  for (const spec of specs) {
+    const range = selectByteRange("bytes=" + spec.trim(), length);
+    if (range.kind === "full") return { kind: "full" };
+    if (range.kind === "unsatisfiable") continue;
+    total += range.end - range.start + 1;
+    if (total > 1024 * 1024) return { kind: "full" };
+    parts.push({ start: range.start, end: range.end });
+  }
+  if (parts.length === 0) return { kind: "unsatisfiable" };
+  if (parts.length === 1) return { kind: "partial", ...parts[0] };
+  return { kind: "multipart", parts };
+}
