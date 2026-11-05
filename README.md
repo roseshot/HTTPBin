@@ -49,7 +49,8 @@ The default `workers.dev` and preview URLs are disabled in `wrangler.jsonc`.
 
 ## Documentation
 
-- [API explorer](/docs) · [OpenAPI specification](/openapi.json) (when running the service)
+- `/docs` — API explorer and playground
+- `/openapi.json` — OpenAPI 3.1 specification
 - [HTTP semantics and runtime limitations](docs/http-semantics.md)
 
 The service is intended for testing. Do not send real credentials or sensitive data to public instances.
