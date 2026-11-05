@@ -9,6 +9,7 @@ An RFC-oriented HTTP testing and inspection service built on Cloudflare Workers,
 - Inspect HTTP methods, headers, query parameters, request bodies, and file uploads.
 - Test authentication, redirects, cookies, status codes, and streaming responses.
 - Explore caching, conditional requests, byte ranges, compression, and content negotiation.
+- Test HTTP QUERY, Problem Details, Content-Digest, and modern response fields.
 - Build and replay requests in the browser, or use any HTTP client.
 - Browse the web interface in 18 languages, including right-to-left Arabic; API responses remain unchanged.
 
@@ -52,7 +53,7 @@ The default `workers.dev` and preview URLs are disabled in `wrangler.jsonc`.
 
 - `/docs` — API explorer and playground
 - `/standards` — RFC coverage and limitations
-- `/openapi.json` — OpenAPI 3.1 specification
+- `/openapi.json` — OpenAPI 3.2.1 specification
 - [HTTP semantics and runtime limitations](docs/http-semantics.md)
 
 The service is intended for testing. Do not send real credentials or sensitive data to public instances.

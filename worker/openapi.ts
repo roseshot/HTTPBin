@@ -22,7 +22,7 @@ function operation(endpoint: Endpoint, method: string): Record<string, unknown> 
     required: param.required ?? false,
     schema: { type: "string", ...(param.example ? { example: param.example } : {}) },
   }));
-  const sendsBody = ["post", "put", "patch", "delete"].includes(method) &&
+  const sendsBody = ["post", "put", "patch", "delete", "query"].includes(method) &&
     (endpoint.method === "ANY" || endpoint.method === method.toUpperCase());
   const media = endpoint.path === "/image" ? {
     "image/png": binary, "image/jpeg": binary, "image/webp": binary, "image/svg+xml": { schema: { type: "string" } },
@@ -54,9 +54,12 @@ function operation(endpoint: Endpoint, method: string): Record<string, unknown> 
       "304": { description: "Not modified" },
       "400": { description: "Invalid request" },
       "401": { description: "Authentication required" },
+      "405": { description: "Method not allowed", headers: { Allow: { schema: { type: "string" } } } },
       "406": { description: "Not acceptable" },
       "412": { description: "Precondition failed" },
       "413": { description: "Payload too large" },
+      "415": { description: "Unsupported media type" },
+      "422": { description: "Unprocessable content" },
       "416": { description: "Range not satisfiable" },
       default: { description: "Response status selected by the request or runtime" },
     },
@@ -64,7 +67,7 @@ function operation(endpoint: Endpoint, method: string): Record<string, unknown> 
 }
 
 function supportedMethods(endpoint: Endpoint): string[] {
-  if (endpoint.method === "ANY") return ["get", "head", "post", "put", "patch", "delete", "options"];
+  if (endpoint.method === "ANY") return ["get", "head", "post", "put", "patch", "delete", "query", "options"];
   if (endpoint.method === "GET") return ["get", "head", "options"];
   return [endpoint.method.toLowerCase(), "options"];
 }
@@ -76,12 +79,26 @@ export function openApi(origin: string) {
     for (const method of supportedMethods(endpoint)) paths[endpoint.path][method] = operation(endpoint, method);
   }
   paths["/response-headers"].post = operation(endpoints.find((item) => item.path === "/response-headers")!, "post");
+  const query = paths["/query"]?.query as Record<string, unknown> | undefined;
+  if (query) {
+    query.requestBody = { required: true, content: { "application/json": { schema: {} } } };
+    query.responses = {
+      ...(query.responses as Record<string, unknown>),
+      "200": { description: "Processed safe, idempotent query", content: { "application/json": { schema: { type: "object" } } }, headers: { "Accept-Query": { schema: { type: "string" } } } },
+    };
+  }
+  const digest = paths["/digest/{algorithm}"]?.get as Record<string, unknown> | undefined;
+  if (digest) (digest.responses as Record<string, unknown>)["200"] = {
+    description: "Digest-bearing content", content: { "text/plain": { schema: { type: "string" } } },
+    headers: { "Content-Digest": { schema: { type: "string" } }, "Repr-Digest": { schema: { type: "string" } } },
+  };
+
   return {
-    openapi: "3.1.0",
+    openapi: "3.2.1",
     info: {
       title: "HTTPBin Workers",
       version: "0.1.0",
-      description: "RFC 9110/9111 HTTP test fixtures on Cloudflare Workers. Transport-level behavior is determined by Fetch and the Workers runtime.",
+      description: "RFC-oriented HTTP fixtures including RFC 10008 QUERY, RFC 9457 Problem Details and RFC 9530 Digest Fields. Transport framing is controlled by Cloudflare Workers.",
     },
     servers: [{ url: origin }],
     components: {
@@ -102,6 +119,7 @@ export function swagger(origin: string) {
   for (const [path, methods] of Object.entries(spec.paths)) {
     paths[path] = {};
     for (const [method, details] of Object.entries(methods)) {
+      if (method === "query") continue; // Swagger 2.0 does not define a QUERY operation.
       const entry = details as Record<string, any>;
       paths[path][method] = {
         tags: entry.tags,

@@ -378,7 +378,7 @@ export default function App() {
         <div className="playground-scroller">
           <div className="caption"><Globe2 size={14} /> {t("request")}</div>
           <div className="request-bar">
-            <select aria-label="HTTP method" value={method} onChange={(event) => setMethod(event.target.value as Method)}>{["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"].map((value) => <option key={value}>{value}</option>)}</select>
+            <select aria-label="HTTP method" value={method} onChange={(event) => setMethod(event.target.value as Method)}>{["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "QUERY"].map((value) => <option key={value}>{value}</option>)}</select>
             <input aria-label="Request path" value={path} onChange={(event) => setPath(event.target.value)} spellCheck={false} />
           </div>
           <div className="help-text"><Globe2 size={12} /><code>{window.location.origin}</code><span>·</span><span>{t("sameOrigin")}</span></div>

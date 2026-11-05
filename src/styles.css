@@ -267,3 +267,5 @@ a:hover { color: var(--blue); }
   .language-picker svg { display: none; }
   .top-link { padding: 7px 5px; }
 }
+
+.method-QUERY { color: var(--blue); background: #377bea25; }

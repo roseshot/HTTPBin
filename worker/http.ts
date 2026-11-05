@@ -1,3 +1,5 @@
+import { problem } from "./protocol";
+
 export const MAX_BYTES = 1024 * 1024;
 export const encoder = new TextEncoder();
 
@@ -9,7 +11,7 @@ export function json(data: unknown, status = 200, headers?: HeadersInit): Respon
 }
 
 export function error(message: string, status = 400): Response {
-  return json({ error: message }, status);
+  return problem(message, status);
 }
 
 export function intParam(value: string | undefined, maximum: number, minimum = 0): number | null {

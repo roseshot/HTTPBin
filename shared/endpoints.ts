@@ -1,4 +1,4 @@
-export type Method = "GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS" | "ANY";
+export type Method = "GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS" | "QUERY" | "ANY";
 export type Group = "HTTP Methods" | "Request Inspection" | "Authentication" | "Status Codes" | "Redirects" | "Cookies" | "Response Formats" | "Dynamic Data" | "Streaming" | "Caching" | "Images" | "Utilities";
 export interface Endpoint {
   method: Method;
@@ -12,6 +12,14 @@ export interface Endpoint {
 const q = (name: string, description: string, example?: string) => ({ name, in: "query" as const, description, example });
 const p = (name: string, description: string, example?: string) => ({ name, in: "path" as const, required: true, description, example });
 export const endpoints: Endpoint[] = [
+  { method: "QUERY", path: "/query", group: "HTTP Methods", summary: "Safe, idempotent QUERY method", description: "RFC 10008 QUERY with a JSON request body and Accept-Query discovery. Requires Content-Type: application/json; the response is not cached.", example: "/query" },
+  { method: "GET", path: "/digest/{algorithm}", group: "Response Formats", summary: "Generate Content-Digest", description: "RFC 9530 SHA-256 or SHA-512 Content-Digest and Repr-Digest of a fixed response body.", example: "/digest/sha-256", parameters: [p("algorithm", "sha-256 or sha-512", "sha-256")] },
+  { method: "POST", path: "/digest/verify", group: "Response Formats", summary: "Verify Content-Digest", description: "Checks RFC 9530 Content-Digest against a request body (up to 1 MiB), returning 422 on mismatch.", parameters: [q("algorithm", "sha-256 or sha-512 (default sha-256)", "sha-256")] },
+  { method: "POST", path: "/prefer", group: "Response Formats", summary: "Prefer minimal response", description: "RFC 7240: returns 204 for Prefer: return=minimal; otherwise a JSON representation with Preference-Applied." },
+  { method: "GET", path: "/download", group: "Response Formats", summary: "Download with UTF-8 filename", description: "RFC 6266 and RFC 8187 Content-Disposition attachment response with an encoded UTF-8 filename.", example: "/download?filename=hello.txt", parameters: [q("filename", "Suggested file name", "hello.txt")] },
+  { method: "GET", path: "/deprecation", group: "Caching", summary: "Deprecation and Sunset", description: "RFC 9745 structured Deprecation date and RFC 8594 Sunset response field, with a successor Link." },
+  { method: "GET", path: "/links/header", group: "Utilities", summary: "Web Link relations", description: "RFC 8288 Link response field demonstrating next and previous pagination relations.", example: "/links/header?page=2", parameters: [q("page", "Page index (1-100)", "2")] },
+  { method: "GET", path: "/structured-fields", group: "Response Formats", summary: "Structured field dictionary", description: "RFC 9651 Structured Fields Dictionary fixture with integer, Boolean, and Date items." },
   { method: "GET", path: "/get", group: "HTTP Methods", summary: "Inspect a GET request", description: "Returns the query parameters, headers, origin, and request URL.", example: "/get?hello=world" },
   { method: "POST", path: "/post", group: "HTTP Methods", summary: "Inspect a POST request", description: "Echoes JSON, form values, uploaded files, and raw body data." },
   { method: "PUT", path: "/put", group: "HTTP Methods", summary: "Inspect a PUT request", description: "Returns details of the submitted PUT request." },
