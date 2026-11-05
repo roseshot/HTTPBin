@@ -111,3 +111,7 @@ dist
 
 # TernJS port file
 .tern-port
+
+.wrangler/
+.dev.vars*
+.vite/
