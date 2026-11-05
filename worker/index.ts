@@ -123,7 +123,7 @@ app.get("/uuid", () => json({ uuid: crypto.randomUUID() }));
 app.get("/bytes/:n", (c) => {
   const count = intParam(c.req.param("n"), MAX_BYTES);
   if (count === null) return error("Invalid byte count.");
-  return new Response(randomBytes(count, c.req.query("seed")), { headers: { "content-type": "application/octet-stream", "cache-control": "no-store" } });
+  return new Response(randomBytes(count, c.req.query("seed")).buffer as ArrayBuffer, { headers: { "content-type": "application/octet-stream", "cache-control": "no-store" } });
 });
 app.get("/base64/:value", (c) => {
   try {
@@ -223,7 +223,7 @@ app.get("/etag/:etag", (c) => {
 app.get("/json", () => json({ slideshow: { author: "Yours Truly", date: "date of publication", slides: [{ title: "Wake up to WonderWidgets!", type: "all" }, { items: ["Why WonderWidgets are great", "Who buys WonderWidgets"], title: "Overview", type: "all" }], title: "Sample Slide Show" } }));
 app.get("/html", () => new Response("<!doctype html><html lang=\"en\"><head><title>HTTPBin</title></head><body><h1>Herman Melville - Moby-Dick</h1><p>Call me Ishmael.</p></body></html>", { headers: { "content-type": "text/html; charset=utf-8" } }));
 app.get("/xml", () => new Response('<?xml version="1.0" encoding="utf-8"?><slideshow><title>Sample Slide Show</title><slide>Wake up to WonderWidgets!</slide></slideshow>', { headers: { "content-type": "application/xml; charset=utf-8" } }));
-app.get("/encoding/utf8", () => new Response("Unicode sample: Hello, 世界! Привет! مرحبا! 🌍\n", { headers: { "content-type": "text/html; charset=utf-8" } }));
+app.get("/encoding/utf8", () => new Response("UTF-8 sample: Hello, " + String.fromCodePoint(0x4e16, 0x754c) + "!\n", { headers: { "content-type": "text/html; charset=utf-8" } }));
 
 function compressed(request: Request, format: "gzip" | "deflate" | "br"): Response {
   const payload = JSON.stringify({ ...requestInfo(request), [format === "br" ? "brotli" : format]: true }) + "\n";

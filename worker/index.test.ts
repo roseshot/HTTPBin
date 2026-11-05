@@ -77,7 +77,7 @@ describe("HTTP response behavior", () => {
   });
   test("generates random bytes and a UUID", async () => {
     expect((await (await app.request("/bytes/16")).arrayBuffer()).byteLength).toBe(16);
-    expect((await app.request("/uuid").then((r) => r.json()) as any).uuid).toMatch(/^[0-9a-f-]{36}$/);
+    expect((await (await app.request("/uuid")).json() as any).uuid).toMatch(/^[0-9a-f-]{36}$/);
   });
   test("streams newline-delimited JSON", async () => {
     const response = await app.request("/stream/3");
@@ -85,8 +85,8 @@ describe("HTTP response behavior", () => {
     expect(lines.map((line) => line.id)).toEqual([0, 1, 2]);
   });
   test("returns OpenAPI and Swagger specifications", async () => {
-    const openapi = await app.request("/openapi.json").then((r) => r.json()) as any;
-    const swagger = await app.request("/spec.json").then((r) => r.json()) as any;
+    const openapi = await (await app.request("/openapi.json")).json() as any;
+    const swagger = await (await app.request("/spec.json")).json() as any;
     expect(openapi.openapi).toBe("3.1.0");
     expect(openapi.paths["/get"].get).toBeDefined();
     expect(swagger.swagger).toBe("2.0");
