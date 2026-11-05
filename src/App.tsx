@@ -1,15 +1,32 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Activity, ArrowRight, Check, ChevronDown, ChevronRight, Clock3, Code2, Copy,
-  FileJson2, Globe2, Info, Layers3, Moon, Play, Plus, RotateCw, Search,
+  FileJson2, Globe2, Info, Languages, Layers3, Moon, Play, Plus, RotateCw, Search,
   Send, ShieldCheck, Sun, Terminal, Trash2, Zap,
 } from "lucide-react";
 import { endpoints, groups, type Endpoint, type Method } from "../shared/endpoints";
 import { Button } from "./components/ui/button";
+import { useI18n } from "./i18n";
+import type { MessageKey } from "./i18n/schema";
 import StandardsPage from "./StandardsPage";
 import { TabsList, TabsPanel, TabsRoot, TabsTab } from "./components/ui/tabs";
 
 type Theme = "dark" | "light";
+const groupKeys: Record<Endpoint["group"], { title: MessageKey; description: MessageKey }> = {
+  "HTTP Methods": { title: "groupMethods", description: "descriptionMethods" },
+  "Request Inspection": { title: "groupInspection", description: "descriptionInspection" },
+  Authentication: { title: "groupAuthentication", description: "descriptionAuthentication" },
+  "Status Codes": { title: "groupStatus", description: "descriptionStatus" },
+  Redirects: { title: "groupRedirects", description: "descriptionRedirects" },
+  Cookies: { title: "groupCookies", description: "descriptionCookies" },
+  "Response Formats": { title: "groupFormats", description: "descriptionFormats" },
+  "Dynamic Data": { title: "groupData", description: "descriptionData" },
+  Streaming: { title: "groupStreaming", description: "descriptionStreaming" },
+  Caching: { title: "groupCaching", description: "descriptionCaching" },
+  Images: { title: "groupImages", description: "descriptionImages" },
+  Utilities: { title: "groupUtilities", description: "descriptionUtilities" },
+};
+
 const THEME_KEY = "httpbin-theme";
 const SYSTEM_DARK_QUERY = "(prefers-color-scheme: dark)";
 
@@ -66,34 +83,40 @@ function methodBadge(method: Method) {
 }
 
 function KeyValueEditor({ rows, onChange, noun }: { rows: Pair[]; onChange: (rows: Pair[]) => void; noun: string }) {
+  const { t } = useI18n();
   const update = (id: number, field: "key" | "value", value: string) =>
     onChange(rows.map((row) => row.id === id ? { ...row, [field]: value } : row));
   return (
     <div>
-      <div className="editor-label">Add {noun.toLowerCase()} to your request.</div>
+      <div className="editor-label">{t("addHint")}</div>
       {rows.map((row) => (
         <div className="field-row" key={row.id}>
-          <input className="field" aria-label={noun + " name"} placeholder="Key" value={row.key} onChange={(event) => update(row.id, "key", event.target.value)} />
-          <input className="field" aria-label={noun + " value"} placeholder="Value" value={row.value} onChange={(event) => update(row.id, "value", event.target.value)} />
-          <Button size="icon" variant="ghost" aria-label={"Remove " + noun.toLowerCase()} onClick={() => onChange(rows.filter((item) => item.id !== row.id))}><Trash2 size={14} /></Button>
+          <input className="field" aria-label={noun + " " + t("itemName")} placeholder={t("key")} value={row.key} onChange={(event) => update(row.id, "key", event.target.value)} />
+          <input className="field" aria-label={noun + " " + t("itemValue")} placeholder={t("value")} value={row.value} onChange={(event) => update(row.id, "value", event.target.value)} />
+          <Button size="icon" variant="ghost" aria-label={t("remove") + " " + noun.toLowerCase()} onClick={() => onChange(rows.filter((item) => item.id !== row.id))}><Trash2 size={14} /></Button>
         </div>
       ))}
-      <button className="add-row" onClick={() => onChange([...rows, pair()])}><Plus size={13} /> Add {noun.toLowerCase()}</button>
+      <button className="add-row" onClick={() => onChange([...rows, pair()])}><Plus size={13} /> {t("add")} {noun.toLowerCase()}</button>
     </div>
   );
 }
 
 function ExampleBody({ endpoint }: { endpoint: Endpoint }) {
+  const { t } = useI18n();
   if (["/post", "/put", "/patch", "/anything"].includes(endpoint.path)) {
     return <div className="code-card">
-      <div className="code-card-top"><span>Request body · application/json</span><span>Example</span></div>
+      <div className="code-card-top"><span>{t("requestBody")} · application/json</span><span>{t("example")}</span></div>
       <pre>{'{\n  "hello": "world",\n  "source": "httpbin"\n}'}</pre>
     </div>;
   }
-  return <div className="empty-note">No request body is required for this endpoint.</div>;
+  return <div className="empty-note">{t("noRequestBody")}</div>;
 }
 
 export default function App() {
+  const { locale, locales, setLocale, t, href, formatNumber } = useI18n();
+  const groupTitle = (group: Endpoint["group"]) => t(groupKeys[group].title);
+  const endpointTitle = (endpoint: Endpoint) => locale === "en" ? endpoint.summary : groupTitle(endpoint.group) + " · " + endpoint.path;
+  const endpointDescription = (endpoint: Endpoint) => locale === "en" ? endpoint.description : t(groupKeys[endpoint.group].description);
   const initial = (() => {
     const selected = new URLSearchParams(window.location.search).get("endpoint");
     return endpoints.find((endpoint) => endpoint.path === selected) || endpoints[0];
@@ -183,14 +206,16 @@ export default function App() {
     items: endpoints.filter((endpoint) => endpoint.group === group && (
       endpoint.path.toLowerCase().includes(search.toLowerCase()) ||
       endpoint.summary.toLowerCase().includes(search.toLowerCase()) ||
-      endpoint.group.toLowerCase().includes(search.toLowerCase())
+       endpointTitle(endpoint).toLowerCase().includes(search.toLowerCase()) ||
+      endpoint.group.toLowerCase().includes(search.toLowerCase()) ||
+       groupTitle(endpoint.group).toLowerCase().includes(search.toLowerCase())
     )),
   })).filter((group) => group.items.length > 0);
 
   const makeRequest = useCallback(() => {
-    if (!path.startsWith("/") || path.startsWith("//")) throw new Error("Use a same-origin path beginning with /.");
+    if (!path.startsWith("/") || path.startsWith("//")) throw new Error(t("errorPath"));
     const url = new URL(path, window.location.origin);
-    if (url.origin !== window.location.origin) throw new Error("Cross-origin requests are not supported.");
+    if (url.origin !== window.location.origin) throw new Error(t("errorCrossOrigin"));
     for (const item of params) if (item.key.trim()) url.searchParams.append(item.key.trim(), item.value);
     const requestHeaders = new Headers();
     for (const item of headers) if (item.key.trim()) requestHeaders.set(item.key.trim(), item.value);
@@ -214,13 +239,13 @@ export default function App() {
       }
     }
     return { url, requestHeaders, payload };
-  }, [path, params, headers, authType, username, password, token, method, bodyMode, body, formRows]);
+  }, [path, params, headers, authType, username, password, token, method, bodyMode, body, formRows, t]);
 
   const sendRequest = useCallback(async () => {
     setErrorMessage("");
     let input: ReturnType<typeof makeRequest>;
     try { input = makeRequest(); }
-    catch (error) { setErrorMessage(error instanceof Error ? error.message : "Invalid request."); return; }
+    catch (error) { setErrorMessage(error instanceof Error ? error.message : t("errorRequest")); return; }
     controllerRef.current?.abort();
     const controller = new AbortController();
     controllerRef.current = controller;
@@ -239,7 +264,7 @@ export default function App() {
       let count = 0;
       let size = 0;
       const chunks: Uint8Array[] = [];
-      const timeline: Timeline[] = [{ time: Math.round(performance.now() - start), label: "Response headers received" }];
+      const timeline: Timeline[] = [{ time: Math.round(performance.now() - start), label: t("headersReceived") }];
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       if (reader) {
@@ -250,7 +275,7 @@ export default function App() {
           count++;
           chunks.push(value);
           if (!type.startsWith("image/") && size < 2 * 1024 * 1024) text += decoder.decode(value, { stream: true });
-          timeline.push({ time: Math.round(performance.now() - start), label: "Chunk " + count + " · " + value.byteLength + " bytes" });
+          timeline.push({ time: Math.round(performance.now() - start), label: t("chunk") + " " + count + " · " + formatNumber(value.byteLength) + " " + t("bytes") });
           if (!type.startsWith("image/")) {
             setResult({ status: response.status, statusText: response.statusText, elapsed: Math.round(performance.now() - start), headers: headersList,
               text, bytes: size, contentType: type, finalUrl: response.url, redirected: response.redirected, chunks: count, timeline: [...timeline] });
@@ -265,16 +290,16 @@ export default function App() {
         for (const chunk of chunks) { merged.set(chunk, index); index += chunk.byteLength; }
         imageUrl = URL.createObjectURL(new Blob([merged.buffer as ArrayBuffer], { type }));
       }
-      const warning = response.type === "opaqueredirect" ? "Browser Fetch hides the status and Location of manually handled redirects." :
-        response.redirected ? "The browser automatically followed redirects. Intermediate responses are not visible." : undefined;
+      const warning = response.type === "opaqueredirect" ? t("opaqueWarning") :
+        response.redirected ? t("redirectWarning") : undefined;
       setResult({ status: response.status, statusText: response.statusText, elapsed: Math.round(performance.now() - start),
         headers: headersList, text, bytes: size, contentType: type, imageUrl, finalUrl: response.url, redirected: response.redirected, chunks: count, timeline, warning });
     } catch (error) {
-      if (!controller.signal.aborted) setErrorMessage(error instanceof Error ? error.message : "Request failed.");
+      if (!controller.signal.aborted) setErrorMessage(error instanceof Error ? error.message : t("errorFailed"));
     } finally {
       if (controllerRef.current === controller) { setLoading(false); controllerRef.current = null; }
     }
-  }, [makeRequest, method, followRedirect]);
+  }, [makeRequest, method, followRedirect, formatNumber, t]);
 
   const copyCurl = async () => {
     try {
@@ -289,7 +314,7 @@ export default function App() {
       await copy(args.join(" "));
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
-    } catch (error) { setErrorMessage(error instanceof Error ? error.message : "Unable to copy request."); }
+    } catch (error) { setErrorMessage(error instanceof Error ? error.message : t("errorCopy")); }
   };
 
   const showStandards = window.location.pathname === "/standards";
@@ -298,116 +323,117 @@ export default function App() {
     <header className="topbar">
       <a className="brand" href="/" aria-label="HTTPBin home"><span className="brand-icon"><Terminal size={20} strokeWidth={2.4} /></span><div>http<span>bin</span></div><span className="product-label">Workers Edition</span></a>
       <nav className="topbar-right" aria-label="Site navigation">
-        <a className="top-link" href="/docs"><Layers3 size={15} /><span>API Explorer</span></a>
+        <a className="top-link" href={href("/docs")}><Layers3 size={15} /><span>{t("apiExplorer")}</span></a>
         <a className="top-link" href="/openapi.json" target="_blank" rel="noreferrer"><FileJson2 size={15} /><span>OpenAPI</span></a>
-        <a className="top-link" href="/standards" aria-label="RFC coverage and limitations" aria-current={showStandards ? "page" : undefined}><ShieldCheck size={15} /><span>Standards</span></a>
+        <a className="top-link" href={href("/standards")} aria-label={t("rfcTitle")} aria-current={showStandards ? "page" : undefined}><ShieldCheck size={15} /><span>{t("standards")}</span></a>
+        <label className="language-picker"><Languages size={15} aria-hidden="true" /><select aria-label={t("language")} value={locale} onChange={(event) => setLocale(event.target.value as typeof locale)}>{locales.map(({ code, name }) => <option key={code} value={code}>{name}</option>)}</select></label>
         <span className="top-divider" />
-        <button className="icon-button" aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"} onClick={toggleTheme}>{theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}</button>
+        <button className="icon-button" aria-label={theme === "dark" ? t("themeLight") : t("themeDark")} onClick={toggleTheme}>{theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}</button>
       </nav>
     </header>
     {showStandards ? <StandardsPage /> : <main className="workspace">
       <aside className="sidebar" aria-label="Endpoint navigation">
-        <div className="sidebar-heading"><strong>API ENDPOINTS</strong><span className="counter">{endpoints.length} endpoints</span></div>
-        <div className="search-box"><Search size={15} /><input ref={searchRef} aria-label="Search endpoints" placeholder="Search endpoints..." value={search} onChange={(event) => setSearch(event.target.value)} /><span className="shortcut">⌘K</span></div>
+        <div className="sidebar-heading"><strong>{t("endpoints")}</strong><span className="counter">{formatNumber(endpoints.length)}</span></div>
+        <div className="search-box"><Search size={15} /><input ref={searchRef} aria-label={t("search")} placeholder={t("search")} value={search} onChange={(event) => setSearch(event.target.value)} /><span className="shortcut">⌘K</span></div>
         {filteredGroups.map(({ group, items }) => {
           const collapsed = !search && closedGroups.includes(group);
           return <div className="nav-section" key={group}>
             <button className="nav-heading" onClick={() => setClosedGroups((current) => current.includes(group) ? current.filter((name) => name !== group) : [...current, group])}>
-              <span>{group}</span><span className="counter">{items.length}</span>{collapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
+              <span>{groupTitle(group)}</span><span className="counter">{items.length}</span>{collapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
             </button>
-            {!collapsed && items.map((endpoint) => <button key={endpoint.method + endpoint.path} className={"nav-item" + (selected === endpoint ? " active" : "")} onClick={() => selectEndpoint(endpoint)} title={endpoint.summary}>
+            {!collapsed && items.map((endpoint) => <button key={endpoint.method + endpoint.path} className={"nav-item" + (selected === endpoint ? " active" : "")} onClick={() => selectEndpoint(endpoint)} title={endpointTitle(endpoint)}>
               {methodBadge(endpoint.method)}<span className="nav-path">{endpoint.path}</span>
             </button>)}
           </div>;
         })}
-        {!filteredGroups.length && <p className="result-hint">No matching endpoints.</p>}
+        {!filteredGroups.length && <p className="result-hint">{t("noMatch")}</p>}
       </aside>
       <article className="docs">
-        <div className="breadcrumb"><span>HTTPBin</span><ChevronRight size={13} /><span>{selected.group}</span><ChevronRight size={13} /><strong>{selected.path}</strong></div>
-        <div className="eyebrow"><Zap size={13} /> HTTP API Reference</div>
-        <h1>{selected.summary}</h1>
-        <p className="docs-intro">{selected.description}</p>
+        <div className="breadcrumb"><span>HTTPBin</span><ChevronRight size={13} /><span>{groupTitle(selected.group)}</span><ChevronRight size={13} /><strong>{selected.path}</strong></div>
+        <div className="eyebrow"><Zap size={13} /> {t("reference")}</div>
+        <h1>{endpointTitle(selected)}</h1>
+        <p className="docs-intro">{endpointDescription(selected)}</p>
         <div className="endpoint-heading">{methodBadge(selected.method)}<code className="path-code">{selected.path}</code></div>
         <div className="section">
-          <h2 className="section-title">Parameters</h2>
-          <p className="section-subtitle">Configure these values in the request URL or the playground.</p>
+          <h2 className="section-title">{t("parameters")}</h2>
+          <p className="section-subtitle">{t("parametersHelp")}</p>
           {selected.parameters?.length ? <div className="doc-table">{selected.parameters.map((parameter) => <div className="doc-row" key={parameter.in + parameter.name}>
-            <div><div><code>{parameter.name}</code><span className="mini-badge">{parameter.in}</span>{parameter.required && <span className="mini-badge required">required</span>}</div>
-              <p>{parameter.description}</p>{parameter.example && <code className="code-example">Example: {parameter.example}</code>}</div>
+            <div><div><code>{parameter.name}</code><span className="mini-badge">{parameter.in}</span>{parameter.required && <span className="mini-badge required">{t("required")}</span>}</div>
+              <p lang="en">{parameter.description}</p>{parameter.example && <code className="code-example">{t("example")}: {parameter.example}</code>}</div>
             <span className="mini-badge">string</span>
-          </div>)}</div> : <div className="empty-note">No declared parameters. You can still append custom query parameters or headers.</div>}
+          </div>)}</div> : <div className="empty-note">{t("noParams")}</div>}
         </div>
-        <div className="section"><h2 className="section-title">Request body</h2><p className="section-subtitle">Supported payloads depend on the HTTP method.</p><ExampleBody endpoint={selected} /></div>
-        <div className="section"><h2 className="section-title">Responses</h2>
+        <div className="section"><h2 className="section-title">{t("requestBody")}</h2><p className="section-subtitle">{t("requestBodyHelp")}</p><ExampleBody endpoint={selected} /></div>
+        <div className="section"><h2 className="section-title">{t("responses")}</h2>
           <div className="doc-table">
-            <div className="doc-row"><div><code className="response-status">200</code><span className="mini-badge">Success</span><p>Response body and headers vary by endpoint and test parameters.</p></div><span className="mini-badge">HTTP</span></div>
-            <div className="doc-row"><div><code>4xx / 5xx</code><p>Expected HTTP error codes are returned as responses, not application failures.</p></div><span className="mini-badge">HTTP</span></div>
+            <div className="doc-row"><div><code className="response-status">200</code><span className="mini-badge">{t("success")}</span><p>{t("successHelp")}</p></div><span className="mini-badge">HTTP</span></div>
+            <div className="doc-row"><div><code>4xx / 5xx</code><p>{t("errorsHelp")}</p></div><span className="mini-badge">HTTP</span></div>
           </div>
         </div>
-        <div className="info-callout"><Info size={16} /><div><strong>Cloudflare Workers compatibility</strong><br />Some wire-level headers, compression behavior, and redirect details are controlled by the Workers runtime or browser. Use cURL for tests requiring raw HTTP semantics. <a className="standards-inline-link" href="/standards">View RFC coverage and limitations →</a></div></div>
-        <div className="footer-note"><ShieldCheck size={14} /> Stateless by design · Runs on Cloudflare Workers · OpenAPI 3.1</div>
+        <div className="info-callout"><Info size={16} /><div><strong>{t("runtime")}</strong><br />{t("runtimeHelp")} <a className="standards-inline-link" href={href("/standards")}>{t("rfcLink")} →</a></div></div>
+        <div className="footer-note"><ShieldCheck size={14} /> {t("footDocs")}</div>
       </article>
       <section className="playground" aria-label="HTTP Playground">
-        <div className="playground-header"><div className="panel-title"><Activity size={17} style={{ color: "var(--blue)" }} /> HTTP Playground</div><span className="live-pill"><span className="live-dot" /> LIVE</span></div>
+        <div className="playground-header"><div className="panel-title"><Activity size={17} style={{ color: "var(--blue)" }} /> {t("playground")}</div><span className="live-pill"><span className="live-dot" /> {t("live")}</span></div>
         <div className="playground-scroller">
-          <div className="caption"><Globe2 size={14} /> Request</div>
+          <div className="caption"><Globe2 size={14} /> {t("request")}</div>
           <div className="request-bar">
             <select aria-label="HTTP method" value={method} onChange={(event) => setMethod(event.target.value as Method)}>{["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"].map((value) => <option key={value}>{value}</option>)}</select>
             <input aria-label="Request path" value={path} onChange={(event) => setPath(event.target.value)} spellCheck={false} />
           </div>
-          <div className="help-text"><Globe2 size={12} /><code>{window.location.origin}</code><span>·</span><span>Same-origin requests only</span></div>
+          <div className="help-text"><Globe2 size={12} /><code>{window.location.origin}</code><span>·</span><span>{t("sameOrigin")}</span></div>
           <TabsRoot value={requestTab} onValueChange={(value) => setRequestTab(value as RequestTab)} className="request-tabs">
-            <TabsList className="tab-list">{(["params", "headers", "body", "auth"] as const).map((value) => <TabsTab className="tab-trigger" value={value} key={value}>{value === "params" ? "Params" : value === "headers" ? "Headers" : value === "body" ? "Body" : "Auth"}</TabsTab>)}</TabsList>
-            <TabsPanel value="params" className="tab-panel"><KeyValueEditor rows={params} onChange={setParams} noun="Parameter" /></TabsPanel>
-            <TabsPanel value="headers" className="tab-panel"><KeyValueEditor rows={headers} onChange={setHeaders} noun="Header" /></TabsPanel>
+            <TabsList className="tab-list">{(["params", "headers", "body", "auth"] as const).map((value) => <TabsTab className="tab-trigger" value={value} key={value}>{t(value === "params" ? "params" : value === "headers" ? "headers" : value === "body" ? "body" : "auth")}</TabsTab>)}</TabsList>
+            <TabsPanel value="params" className="tab-panel"><KeyValueEditor rows={params} onChange={setParams} noun={t("parameters")} /></TabsPanel>
+            <TabsPanel value="headers" className="tab-panel"><KeyValueEditor rows={headers} onChange={setHeaders} noun={t("headers")} /></TabsPanel>
             <TabsPanel value="body" className="tab-panel">
-              <div className="editor-label">Content type</div>
+              <div className="editor-label">{t("contentType")}</div>
               <select className="field" aria-label="Request body mode" value={bodyMode} onChange={(event) => setBodyMode(event.target.value as BodyMode)}>
-                <option value="json">JSON</option><option value="text">Plain text</option><option value="form">Form URL encoded</option><option value="multipart">Multipart form</option><option value="binary">Binary (UTF-8 bytes)</option><option value="none">No body</option>
+                <option value="json">{t("json")}</option><option value="text">{t("plainText")}</option><option value="form">{t("form")}</option><option value="multipart">{t("multipart")}</option><option value="binary">{t("binary")}</option><option value="none">{t("noBody")}</option>
               </select>
-              {bodyMode === "form" || bodyMode === "multipart" ? <div style={{ marginTop: 13 }}><KeyValueEditor rows={formRows} onChange={setFormRows} noun="Field" /></div> :
-                bodyMode !== "none" ? <><div className="label">Request payload</div><textarea spellCheck={false} aria-label="Request body" className="editor" value={body} onChange={(event) => setBody(event.target.value)} /></> :
-                <p className="result-hint">No request body will be sent.</p>}
-              {(method === "GET" || method === "DELETE") && <p className="result-hint">Body editing is available for POST, PUT, and PATCH requests.</p>}
+              {bodyMode === "form" || bodyMode === "multipart" ? <div style={{ marginTop: 13 }}><KeyValueEditor rows={formRows} onChange={setFormRows} noun={t("value")} /></div> :
+                bodyMode !== "none" ? <><div className="label">{t("payload")}</div><textarea spellCheck={false} aria-label="Request body" className="editor" value={body} onChange={(event) => setBody(event.target.value)} /></> :
+                <p className="result-hint">{t("noBodyMessage")}</p>}
+              {(method === "GET" || method === "HEAD" || method === "OPTIONS") && <p className="result-hint">{t("bodyGuard")}</p>}
             </TabsPanel>
             <TabsPanel value="auth" className="tab-panel">
-              <div className="editor-label">Authorization scheme</div>
+              <div className="editor-label">{t("authScheme")}</div>
               <select className="field" value={authType} aria-label="Authorization type" onChange={(event) => setAuthType(event.target.value as "none" | "basic" | "bearer")}>
-                <option value="none">No authentication</option><option value="basic">Basic authentication</option><option value="bearer">Bearer token</option>
+                <option value="none">{t("noAuth")}</option><option value="basic">{t("basicAuth")}</option><option value="bearer">{t("bearerToken")}</option>
               </select>
-              {authType === "basic" && <><label className="label" htmlFor="username">Username</label><input className="field" id="username" value={username} onChange={(event) => setUsername(event.target.value)} /><label className="label" htmlFor="password">Password</label><input className="field" type="password" id="password" value={password} onChange={(event) => setPassword(event.target.value)} /></>}
-              {authType === "bearer" && <><label className="label" htmlFor="token">Token</label><input className="field" type="password" id="token" value={token} onChange={(event) => setToken(event.target.value)} /></>}
-              <p className="result-hint">Credentials remain in this browser session and are never stored by the playground.</p>
+              {authType === "basic" && <><label className="label" htmlFor="username">{t("username")}</label><input className="field" id="username" value={username} onChange={(event) => setUsername(event.target.value)} /><label className="label" htmlFor="password">{t("password")}</label><input className="field" type="password" id="password" value={password} onChange={(event) => setPassword(event.target.value)} /></>}
+              {authType === "bearer" && <><label className="label" htmlFor="token">{t("token")}</label><input className="field" type="password" id="token" value={token} onChange={(event) => setToken(event.target.value)} /></>}
+              <p className="result-hint">{t("credentialsHint")}</p>
             </TabsPanel>
           </TabsRoot>
-          <label className="checkbox-row"><input type="checkbox" checked={followRedirect} onChange={(event) => setFollowRedirect(event.target.checked)} /> Automatically follow redirects</label>
+          <label className="checkbox-row"><input type="checkbox" checked={followRedirect} onChange={(event) => setFollowRedirect(event.target.checked)} /> {t("followRedirects")}</label>
           <div className="request-actions">
-            <Button variant="secondary" size="small" onClick={copyCurl}>{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? "Copied" : "Copy cURL"}</Button>
-            <Button variant="primary" className="send" disabled={loading} onClick={() => void sendRequest()}>{loading ? <RotateCw size={15} className="animate-spin" /> : <Play size={15} fill="currentColor" />}{loading ? "Sending..." : "Send Request"}<ArrowRight size={15} /></Button>
-            {loading && <Button variant="ghost" size="icon" aria-label="Cancel request" onClick={() => controllerRef.current?.abort()}>×</Button>}
+            <Button variant="secondary" size="small" onClick={copyCurl}>{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? t("copied") : t("copyCurl")}</Button>
+            <Button variant="primary" className="send" disabled={loading} onClick={() => void sendRequest()}>{loading ? <RotateCw size={15} className="animate-spin" /> : <Play size={15} fill="currentColor" />}{loading ? t("sending") : t("send")}<ArrowRight size={15} /></Button>
+            {loading && <Button variant="ghost" size="icon" aria-label={t("cancel")} onClick={() => controllerRef.current?.abort()}>×</Button>}
           </div>
           {errorMessage && <p className="tooltip-error" role="alert">{errorMessage}</p>}
           <hr className="section-divider" />
-          <div className="response-summary"><div className="caption" style={{ margin: 0 }}><Code2 size={14} /> Response</div>
-            {result && <div className="response-meta"><span className={"response-code" + (result.status >= 400 || result.status === 0 ? " bad" : "")}>{result.status || "Opaque"}</span><span><Clock3 size={12} />{result.elapsed} ms</span><span>{result.bytes.toLocaleString()} B</span></div>}
+          <div className="response-summary"><div className="caption" style={{ margin: 0 }}><Code2 size={14} /> {t("response")}</div>
+            {result && <div className="response-meta"><span className={"response-code" + (result.status >= 400 || result.status === 0 ? " bad" : "")}>{result.status || "Opaque"}</span><span><Clock3 size={12} />{result.elapsed} ms</span><span>{formatNumber(result.bytes)} B</span></div>}
           </div>
           {result ? <TabsRoot value={responseTab} onValueChange={(value) => setResponseTab(value as ResponseTab)} className="response-tabs">
-            <TabsList className="tab-list"><TabsTab className="tab-trigger" value="body">Body</TabsTab><TabsTab className="tab-trigger" value="headers">Headers <span className="counter">{result.headers.length}</span></TabsTab><TabsTab className="tab-trigger" value="timeline">Timeline <span className="counter">{result.chunks}</span></TabsTab></TabsList>
+            <TabsList className="tab-list"><TabsTab className="tab-trigger" value="body">{t("body")}</TabsTab><TabsTab className="tab-trigger" value="headers">{t("headers")} <span className="counter">{result.headers.length}</span></TabsTab><TabsTab className="tab-trigger" value="timeline">{t("timeline")} <span className="counter">{result.chunks}</span></TabsTab></TabsList>
             <TabsPanel value="body" className="tab-panel">
-              <div className="editor-label">Format: <strong>{contentKind(result.contentType)}</strong> · {result.contentType}</div>
-              {result.imageUrl ? <img className="image-preview" src={result.imageUrl} alt="Response preview" /> :
-                contentKind(result.contentType) === "BINARY" ? <div className="empty-note">Binary response received: {result.bytes} bytes. Use cURL to inspect the raw bytes.</div> :
-                <pre className="result-body">{pretty(result.text, result.contentType) || "(empty response body)"}</pre>}
+              <div className="editor-label">{t("format")}: <strong>{contentKind(result.contentType)}</strong> · {result.contentType}</div>
+              {result.imageUrl ? <img className="image-preview" src={result.imageUrl} alt={t("imagePreview")} /> :
+                contentKind(result.contentType) === "BINARY" ? <div className="empty-note">{t("binaryReceived")} ({formatNumber(result.bytes)} B)</div> :
+                <pre className="result-body">{pretty(result.text, result.contentType) || t("emptyBody")}</pre>}
               {result.warning && <p className="result-hint">{result.warning}</p>}
-              {result.redirected && <p className="result-hint">Final URL: {result.finalUrl}</p>}
+              {result.redirected && <p className="result-hint">{t("finalUrl")}: {result.finalUrl}</p>}
             </TabsPanel>
             <TabsPanel value="headers" className="tab-panel">
-              <div className="doc-table">{result.headers.length ? result.headers.map(([key, value]) => <div className="doc-row" key={key}><code>{key}</code><span style={{ overflowWrap: "anywhere", color: "var(--muted)", fontSize: 11, textAlign: "right" }}>{value}</span></div>) : <div className="doc-row">No response headers are exposed.</div>}</div>
+              <div className="doc-table">{result.headers.length ? result.headers.map(([key, value]) => <div className="doc-row" key={key}><code>{key}</code><span style={{ overflowWrap: "anywhere", color: "var(--muted)", fontSize: 11, textAlign: "right" }}>{value}</span></div>) : <div className="doc-row">{t("noHeaders")}</div>}</div>
             </TabsPanel>
             <TabsPanel value="timeline" className="tab-panel"><div className="timeline">{result.timeline.map((event, index) => <div className="timeline-item" key={index}><strong>{event.time} ms</strong>{event.label}</div>)}</div></TabsPanel>
           </TabsRoot> :
-            <div className="response-placeholder" style={{ marginTop: 18 }}><Send size={23} /><strong>Your response will appear here</strong><p>Configure a request and select Send Request.</p></div>}
-          <div className="footer-note"><ShieldCheck size={14} /> Requests run directly in your browser against this Worker.</div>
+            <div className="response-placeholder" style={{ marginTop: 18 }}><Send size={23} /><strong>{t("responsePlaceholder")}</strong><p>{t("responsePlaceholderHelp")}</p></div>}
+          <div className="footer-note"><ShieldCheck size={14} /> {t("footPlayground")}</div>
         </div>
       </section>
     </main>}

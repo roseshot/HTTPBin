@@ -10,6 +10,7 @@ An RFC-oriented HTTP testing and inspection service built on Cloudflare Workers,
 - Test authentication, redirects, cookies, status codes, and streaming responses.
 - Explore caching, conditional requests, byte ranges, compression, and content negotiation.
 - Build and replay requests in the browser, or use any HTTP client.
+- Browse the web interface in 18 languages, including right-to-left Arabic; API responses remain unchanged.
 
 Designed around modern HTTP semantics rather than compatibility with the original HTTPBin.
 

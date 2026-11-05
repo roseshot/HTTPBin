@@ -1,24 +1,26 @@
 import { ArrowRight, ExternalLink, Info, Layers3, ShieldCheck } from "lucide-react";
 import { coverageLabels, rfcUrl, standards, unsupportedCapabilities, type CoverageLevel } from "../shared/standards";
+import { useI18n } from "./i18n";
 
 const levels: CoverageLevel[] = ["subset", "demonstration", "runtime"];
 
 export default function StandardsPage() {
+  const { t, href } = useI18n();
+  const statusLabel = (level: CoverageLevel) => t(level === "subset" ? "subset" : level === "demonstration" ? "demonstration" : "runtimeControlled");
   return (
     <main className="standards-page" id="main-content">
       <div className="standards-content">
-        <div className="eyebrow"><ShieldCheck size={14} /> Protocol reference</div>
-        <h1>RFC coverage &amp; limitations</h1>
+        <div className="eyebrow"><ShieldCheck size={14} /> {t("rfcEyebrow")}</div>
+        <h1>{t("rfcTitle")}</h1>
         <p className="standards-lede">
-          HTTPBin Workers implements selected HTTP behaviors described by IETF RFCs.
-          This is a feature-level implementation summary, <strong>not a claim of full RFC compliance or certification.</strong>
+          {t("rfcLede")} <strong>{t("rfcDisclaimer")}</strong>
         </p>
 
         <div className="standards-summary" aria-label="Coverage levels">
           {levels.map((level) => (
             <div className="standards-summary-item" key={level}>
               <strong>{standards.filter((standard) => standard.level === level).length}</strong>
-              <span>{coverageLabels[level]}</span>
+              <span>{statusLabel(level)}</span>
             </div>
           ))}
         </div>
@@ -26,30 +28,30 @@ export default function StandardsPage() {
         <section aria-labelledby="standards-heading" className="standards-section">
           <div className="standards-section-header">
             <div>
-              <h2 id="standards-heading">Standard-by-standard coverage</h2>
-              <p>What the service demonstrates, and where support stops.</p>
+              <h2 id="standards-heading">{t("rfcHeading")}</h2>
+              <p>{t("rfcHeadingHelp")}</p>
             </div>
             <a className="standards-doc-link" href="https://github.com/roseshot/HTTPBin/blob/main/docs/http-semantics.md" target="_blank" rel="noreferrer">
-              Implementation notes <ExternalLink size={14} aria-hidden="true" />
+              {t("implementationNotes")} <ExternalLink size={14} aria-hidden="true" />
             </a>
           </div>
           <div className="standards-grid">
             {standards.map((standard) => (
               <article className="standard-card" key={standard.rfc}>
                 <div className="standard-card-top">
-                  <a className="standard-number" href={rfcUrl(standard.rfc)} target="_blank" rel="noreferrer" aria-label={`Read RFC ${standard.rfc} on RFC Editor`}>
+                  <a className="standard-number" href={rfcUrl(standard.rfc)} target="_blank" rel="noreferrer" aria-label={`${t("rfcRead")} ${standard.rfc}`}>
                     RFC {standard.rfc} <ExternalLink size={12} aria-hidden="true" />
                   </a>
-                  <span className={`standard-badge standard-badge-${standard.level}`}>{coverageLabels[standard.level]}</span>
+                  <span className={`standard-badge standard-badge-${standard.level}`}>{statusLabel(standard.level)}</span>
                 </div>
                 <h3>{standard.title}</h3>
                 <dl className="standard-details">
                   <div>
-                    <dt>Covered behavior</dt>
+                    <dt>{t("covered")}</dt>
                     <dd>{standard.implemented}</dd>
                   </div>
                   <div>
-                    <dt>Not covered / limited</dt>
+                    <dt>{t("missing")}</dt>
                     <dd>{standard.missing}</dd>
                   </div>
                 </dl>
@@ -59,23 +61,21 @@ export default function StandardsPage() {
         </section>
 
         <section aria-labelledby="limitations-heading" className="standards-section">
-          <h2 id="limitations-heading">Known unsupported capabilities</h2>
-          <p className="standards-section-intro">Some features are intentionally out of scope; others are controlled by Cloudflare Workers or the browser.</p>
+          <h2 id="limitations-heading">{t("unsupported")}</h2>
+          <p className="standards-section-intro">{t("unsupportedHelp")}</p>
           <ul className="standards-limitations">
-            {unsupportedCapabilities.map((capability) => <li key={capability}>{capability}</li>)}
+            {unsupportedCapabilities.map((capability, index) => <li key={capability}>{t((`limit${index + 1}`) as "limit1" | "limit2" | "limit3" | "limit4" | "limit5")}</li>)}
           </ul>
         </section>
 
         <aside className="standards-notice">
           <Info size={18} aria-hidden="true" />
           <p>
-            Coverage reflects the application's documented behavior and automated tests, not an independent
-            conformance audit. Cloudflare may control response framing, compression, and transport negotiation.
-            Do not use the authentication examples to protect real resources.
+            {t("rfcNotice")}
           </p>
         </aside>
 
-        <a className="standards-back" href="/docs"><Layers3 size={16} aria-hidden="true" /> Explore HTTP endpoints <ArrowRight size={16} aria-hidden="true" /></a>
+        <a className="standards-back" href={href("/docs")}><Layers3 size={16} aria-hidden="true" /> {t("explore")} <ArrowRight size={16} aria-hidden="true" /></a>
       </div>
     </main>
   );
