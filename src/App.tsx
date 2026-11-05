@@ -1,12 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Activity, ArrowRight, Check, ChevronDown, ChevronRight, Clock3, Code2, Copy, ExternalLink,
-  FileJson2, Github, Globe2, Info, Layers3, Moon, Play, Plus, RotateCw, Search,
+  Activity, ArrowRight, Check, ChevronDown, ChevronRight, Clock3, Code2, Copy,
+  FileJson2, Globe2, Info, Layers3, Moon, Play, Plus, RotateCw, Search,
   Send, ShieldCheck, Sun, Terminal, Trash2, Zap,
 } from "lucide-react";
 import { endpoints, groups, type Endpoint, type Method } from "../shared/endpoints";
 import { Button } from "./components/ui/button";
 import { TabsList, TabsPanel, TabsRoot, TabsTab } from "./components/ui/tabs";
+
+type Theme = "dark" | "light";
+const THEME_KEY = "httpbin-theme";
+const SYSTEM_DARK_QUERY = "(prefers-color-scheme: dark)";
+
+function savedTheme(): Theme | null {
+  try {
+    const value = localStorage.getItem(THEME_KEY);
+    return value === "dark" || value === "light" ? value : null;
+  } catch {
+    return null;
+  }
+}
 
 type Pair = { id: number; key: string; value: string };
 type RequestTab = "params" | "headers" | "body" | "auth";
@@ -87,7 +100,9 @@ export default function App() {
   const [selected, setSelected] = useState<Endpoint>(initial);
   const [search, setSearch] = useState("");
   const [closedGroups, setClosedGroups] = useState<string[]>([]);
-  const [theme, setTheme] = useState<"dark" | "light">(() => localStorage.getItem("httpbin-theme") === "light" ? "light" : "dark");
+  const [themeOverride, setThemeOverride] = useState<Theme | null>(savedTheme);
+  const [systemTheme, setSystemTheme] = useState<Theme>(() => window.matchMedia(SYSTEM_DARK_QUERY).matches ? "dark" : "light");
+  const theme = themeOverride ?? systemTheme;
   const [path, setPath] = useState(pathFor(initial));
   const [method, setMethod] = useState<Method>(initial.method === "ANY" ? "GET" : initial.method);
   const [requestTab, setRequestTab] = useState<RequestTab>("params");
@@ -112,8 +127,30 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    localStorage.setItem("httpbin-theme", theme);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "dark" ? "#0b101a" : "#f4f7fb");
   }, [theme]);
+  useEffect(() => {
+    const media = window.matchMedia(SYSTEM_DARK_QUERY);
+    const onChange = (event: MediaQueryListEvent) => setSystemTheme(event.matches ? "dark" : "light");
+    media.addEventListener("change", onChange);
+    return () => media.removeEventListener("change", onChange);
+  }, []);
+  useEffect(() => {
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === THEME_KEY || event.key === null) setThemeOverride(savedTheme());
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setThemeOverride(nextTheme);
+    try {
+      localStorage.setItem(THEME_KEY, nextTheme);
+    } catch {
+      // Continue with the in-memory theme when storage is unavailable.
+    }
+  };
   useEffect(() => () => { abortOnUnmount.current?.abort(); }, []);
   useEffect(() => {
     function onKeydown(event: KeyboardEvent) {
@@ -260,9 +297,8 @@ export default function App() {
       <nav className="topbar-right" aria-label="Site navigation">
         <a className="top-link" href="/docs"><Layers3 size={15} /><span>API Explorer</span></a>
         <a className="top-link" href="/openapi.json" target="_blank" rel="noreferrer"><FileJson2 size={15} /><span>OpenAPI</span></a>
-        <a className="top-link" href="https://github.com/roseshot/HTTPBin" target="_blank" rel="noreferrer"><Github size={15} /><span>GitHub</span><ExternalLink size={11} /></a>
         <span className="top-divider" />
-        <button className="icon-button" aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"} onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>{theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}</button>
+        <button className="icon-button" aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"} onClick={toggleTheme}>{theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}</button>
       </nav>
     </header>
     <main className="workspace">
