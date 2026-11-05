@@ -32,6 +32,11 @@ describe("web interface localization", () => {
       expect(translate("send", messages).length).toBeGreaterThan(0);
       expect(translate("rfcTitle", messages).length).toBeGreaterThan(0);
       expect(translate("groupMethods", messages).length).toBeGreaterThan(0);
+      for (const key of Object.keys(english) as MessageKey[]) {
+        expect(messages[key]).toBeDefined();
+        expect(typeof messages[key]).toBe("string");
+        expect(messages[key]?.trim().length).toBeGreaterThan(0);
+      }
       if (code !== "en") expect(translate("language", messages)).not.toBe(english.language);
     }
     expect(translate("apiExplorer", { apiExplorer: "" })).toBe(english.apiExplorer);

@@ -47,6 +47,20 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     return () => { active = false; };
   }, [locale]);
 
+  useEffect(() => {
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== storageKey || !event.newValue) return;
+      const known = locales.find(({ code }) => code === event.newValue);
+      if (known) updateLocale(known.code);
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  useEffect(() => {
+    document.title = (location.pathname === "/standards" ? translate("rfcTitle", ready ? messages : english) : translate("playground", ready ? messages : english)) + " · HTTPBin Workers";
+  }, [ready, messages, locale]);
+
   const setLocale = useCallback((next: Locale) => {
     updateLocale(next);
     try { localStorage.setItem(storageKey, next); } catch { /* Persistent storage is optional. */ }
