@@ -3,6 +3,7 @@ import { endpoints } from "../shared/endpoints";
 import { MAX_BYTES, encoder, error, escapeHtml, headersObject, inspect, intParam, json, origin, queryObject, randomBytes, requestInfo, seconds, sleep, streamed } from "./http";
 import { openApi, swagger } from "./openapi";
 import { digestAuth } from "./digest";
+import { LAST_MODIFIED, ifRangeMatches, preconditionStatus, selectByteRange } from "./semantics";
 
 export const app = new Hono();
 
@@ -45,31 +46,36 @@ app.get("/bearer", (c) => {
 });
 
 app.all("/status/:codes", (c) => {
-  const codes = c.req.param("codes").split(",");
-  const choices = codes.map((part) => {
+  const choices = c.req.param("codes").split(",").map((part) => {
     const [code, weight = "1"] = part.split(":");
     return { status: Number(code), weight: Number(weight) };
   });
-  if (!choices.length || choices.some((item) => !Number.isInteger(item.status) || item.status < 100 || item.status > 599 || !Number.isFinite(item.weight) || item.weight <= 0)) return error("Invalid status code or weight.");
+  if (!choices.length || choices.some((item) => !Number.isInteger(item.status) || item.status < 100 || item.status > 599 || !Number.isFinite(item.weight) || item.weight <= 0)) {
+    return error("Invalid status code or weight.");
+  }
   const total = choices.reduce((sum, item) => sum + item.weight, 0);
   let pick = Math.random() * total;
   const choice = choices.find((item) => (pick -= item.weight) < 0) || choices[choices.length - 1];
   if (choice.status < 200) return error("Informational responses are not supported by the Workers Response API.", 501);
-  if (choice.status === 204 || choice.status === 205 || choice.status === 304) return new Response(null, { status: choice.status });
-  if ([301, 302, 303, 307, 308].includes(choice.status)) return new Response(null, { status: choice.status, headers: { location: "/get" } });
-  return new Response(choice.status >= 400 ? "HTTP " + choice.status + "\n" : null, { status: choice.status });
+  const withoutBody = c.req.method === "HEAD" || [204, 205, 304].includes(choice.status);
+  return new Response(withoutBody || choice.status < 400 ? null : "HTTP " + choice.status + "\n", { status: choice.status });
 });
 
-app.on(["GET", "POST"], "/response-headers", (c) => {
+app.on(["GET", "HEAD", "POST"], "/response-headers", (c) => {
   const url = new URL(c.req.url);
-  const response = json(queryObject(url));
+  const payload = JSON.stringify(queryObject(url), null, 2) + "\n";
+  const responseHeaders = new Headers({ "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
   for (const [key, value] of url.searchParams) {
+    if (/^(connection|content-length|content-encoding|transfer-encoding|keep-alive|upgrade|proxy-connection|te|trailer)$/i.test(key)) continue;
     try {
-      if (/^(set-cookie|transfer-encoding|connection|content-length)$/i.test(key)) continue;
-      response.headers.append(key, value);
-    } catch { /* Invalid header names cannot be emitted. */ }
+      if (key.toLowerCase() === "set-cookie") responseHeaders.append(key, value);
+      else responseHeaders.set(key, value);
+    } catch { /* Invalid header names or values are ignored. */ }
   }
-  return response;
+  if (!responseHeaders.has("content-type")) responseHeaders.set("content-type", "application/json; charset=utf-8");
+  return new Response(c.req.method === "HEAD" ? null : payload, {
+    headers: responseHeaders,
+  });
 });
 
 function redirectChain(request: Request, mode: "normal" | "relative" | "absolute", n: string): Response {
@@ -150,13 +156,9 @@ app.get("/stream-bytes/:n", (c) => {
   if (n === null) return error("Invalid byte count.");
   const chunk = intParam(c.req.query("chunk_size") || "10240", 65536, 1);
   if (chunk === null) return error("Invalid chunk size.");
+  const bytes = randomBytes(n, c.req.query("seed"));
   return streamed((controller) => {
-    let remaining = n;
-    while (remaining > 0) {
-      const size = Math.min(chunk, remaining);
-      controller.enqueue(randomBytes(size));
-      remaining -= size;
-    }
+    for (let offset = 0; offset < n; offset += chunk) controller.enqueue(bytes.subarray(offset, Math.min(offset + chunk, n)));
   }, "application/octet-stream");
 });
 app.get("/delay/:n", async (c) => {
@@ -180,47 +182,64 @@ app.get("/drip", (c) => {
     }
   }, "application/octet-stream", status);
 });
-app.get("/range/:n", (c) => {
+app.on(["GET", "HEAD"], "/range/:n", (c) => {
   const length = intParam(c.req.param("n"), MAX_BYTES);
   if (length === null) return error("Invalid range length.");
-  const range = c.req.header("range");
-  let start = 0, end = length - 1;
-  if (range) {
-    const match = /^bytes=(\d*)-(\d*)$/.exec(range.trim());
-    if (!match || (!match[1] && !match[2])) return new Response(null, { status: 416, headers: { "content-range": "bytes */" + length } });
-    if (match[1]) {
-      start = Number(match[1]);
-      end = match[2] ? Number(match[2]) : end;
-    } else {
-      const suffix = Number(match[2]);
-      start = Math.max(0, length - suffix);
-    }
-    if (!length || start >= length || end < start || !Number.isSafeInteger(start) || !Number.isSafeInteger(end)) return new Response(null, { status: 416, headers: { "content-range": "bytes */" + length } });
-    end = Math.min(end, length - 1);
+  const etag = '"range-' + length + '"';
+  const headers = new Headers({
+    "content-type": "application/octet-stream",
+    "accept-ranges": "bytes",
+    "cache-control": "no-store",
+    "etag": etag,
+    "last-modified": LAST_MODIFIED,
+  });
+  const conditional = preconditionStatus(c.req.raw, etag, LAST_MODIFIED);
+  if (conditional !== null) return new Response(null, { status: conditional, headers });
+
+  const rangeHeader = c.req.header("range") ?? null;
+  const ifRange = c.req.header("if-range");
+  const shouldRange = rangeHeader !== null && (ifRange === undefined || ifRangeMatches(ifRange, etag, LAST_MODIFIED));
+  const range = selectByteRange(shouldRange ? rangeHeader : null, length);
+  if (range.kind === "unsatisfiable") {
+    headers.set("content-range", "bytes */" + length);
+    return new Response(null, { status: 416, headers });
   }
+
+  const start = range.kind === "partial" ? range.start : 0;
+  const end = range.kind === "partial" ? range.end : length - 1;
   const size = Math.max(0, end - start + 1);
+  headers.set("content-length", String(size));
+  if (range.kind === "partial") headers.set("content-range", "bytes " + start + "-" + end + "/" + length);
+  if (c.req.method === "HEAD") return new Response(null, { status: range.kind === "partial" ? 206 : 200, headers });
   const bytes = new Uint8Array(size);
   for (let i = 0; i < size; i++) bytes[i] = 97 + ((start + i) % 26);
-  return new Response(bytes, { status: range ? 206 : 200, headers: { "content-type": "application/octet-stream", "accept-ranges": "bytes", "cache-control": "no-store", ...(range ? { "content-range": "bytes " + start + "-" + end + "/" + length } : {}) } });
+  return new Response(bytes, { status: range.kind === "partial" ? 206 : 200, headers });
 });
 
-app.get("/cache", (c) => {
-  const tag = '"httpbin-cache"';
-  if (c.req.header("if-none-match") === tag || c.req.header("if-modified-since")) return new Response(null, { status: 304, headers: { etag: tag } });
-  return json(requestInfo(c.req.raw), 200, { etag: tag, "cache-control": "public, max-age=0" });
+app.on(["GET", "HEAD"], "/cache", (c) => {
+  const etag = '"httpbin-cache"';
+  const headers = new Headers({ etag, "last-modified": LAST_MODIFIED, "cache-control": "public, max-age=0" });
+  const conditional = preconditionStatus(c.req.raw, etag, LAST_MODIFIED);
+  if (conditional !== null) return new Response(null, { status: conditional, headers });
+  const response = json(requestInfo(c.req.raw), 200, headers);
+  return c.req.method === "HEAD" ? new Response(null, { status: 200, headers: response.headers }) : response;
 });
+
 app.get("/cache/:n", (c) => {
   const n = intParam(c.req.param("n"), 31536000);
   if (n === null) return error("Invalid cache lifetime.");
   return json(requestInfo(c.req.raw), 200, { "cache-control": "public, max-age=" + n });
 });
-app.get("/etag/:etag", (c) => {
-  const tag = '"' + c.req.param("etag").replace(/"/g, "") + '"';
-  const match = c.req.header("if-match");
-  const none = c.req.header("if-none-match");
-  if (match && match !== "*" && !match.split(",").map((value) => value.trim()).includes(tag)) return new Response(null, { status: 412, headers: { etag: tag } });
-  if (none === "*" || none?.split(",").map((value) => value.trim()).includes(tag)) return new Response(null, { status: 304, headers: { etag: tag } });
-  return json(requestInfo(c.req.raw), 200, { etag: tag });
+
+app.on(["GET", "HEAD"], "/etag/:etag", (c) => {
+  const value = c.req.param("etag");
+  if (value.length > 128 || !/^[\x21\x23-\x7e]+$/.test(value)) return error("Invalid entity tag.");
+  const etag = '"' + value + '"';
+  const headers = new Headers({ etag, "cache-control": "no-store" });
+  const conditional = preconditionStatus(c.req.raw, etag);
+  if (conditional !== null) return new Response(null, { status: conditional, headers });
+  const response = json(requestInfo(c.req.raw), 200, headers);
+  return c.req.method === "HEAD" ? new Response(null, { status: 200, headers: response.headers }) : response;
 });
 
 app.get("/json", () => json({ slideshow: { author: "Yours Truly", date: "date of publication", slides: [{ title: "Wake up to WonderWidgets!", type: "all" }, { items: ["Why WonderWidgets are great", "Who buys WonderWidgets"], title: "Overview", type: "all" }], title: "Sample Slide Show" } }));

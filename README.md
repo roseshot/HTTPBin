@@ -42,11 +42,11 @@ Authentication to Cloudflare is required before deployment. The deployment uses 
 - `/spec.json`: Swagger 2.0 compatibility specification
 - `/__meta/endpoints`: machine-readable endpoint catalog
 
-The playground supports query parameters, request headers, JSON and text bodies, URL-encoded and multipart forms, Basic, Digest, and Bearer authentication, cURL export, streaming responses, header inspection, and response timing. Requests are restricted to the same origin in the browser.
+The playground supports query parameters, request headers, JSON and text bodies, URL-encoded and multipart forms, Basic and Bearer authentication, cURL export, streaming responses, header inspection, and response timing. Requests are restricted to the same origin in the browser.
 
 ## HTTP endpoints
 
-HTTPBin-compatible routes cover request inspection, HTTP methods, authentication, status codes, response headers, redirects, cookies, dynamic bytes, Base64 decoding, streaming, caching, representations, and image samples. For the complete list, see the interactive API explorer or `/openapi.json`.
+The API is designed around modern HTTP semantics and Cloudflare Workers Fetch/Streams APIs, not wire compatibility with another HTTPBin implementation. Routes cover request inspection, HTTP methods, authentication, status codes, response headers, redirects, cookies, dynamic bytes, streaming, conditional requests, range retrieval, and sample representations. For the full list, see the API explorer or `/openapi.json`.
 
 For example:
 
@@ -60,11 +60,11 @@ curl -N 'http://localhost:5173/stream/5'
 
 ## Runtime compatibility and limits
 
-This service follows HTTPBin's route conventions, but Cloudflare Workers and browser Fetch APIs do not expose every wire-level behavior of a traditional HTTP server. Transfer encoding, certain response headers, informational responses, redirect visibility, and compression negotiation may differ from the original service. Brotli output returns HTTP 501 when the runtime does not provide a Brotli encoder.
+This service follows modern HTTP semantics instead of attempting exact compatibility with legacy HTTPBin responses. Cloudflare Workers and browser Fetch APIs do not expose every wire-level behavior of a traditional HTTP server. Transfer encoding, certain response headers, informational responses, redirect visibility, and compression negotiation may differ from the original service. Brotli output returns HTTP 501 when the runtime does not provide a Brotli encoder.
 
 The application caps request bodies and generated binary responses at 1 MiB, stream records at 100, redirect chains at 20 hops, and time-based delays at 10 seconds. The image endpoints return small sample images. Request payloads are not persisted.
 
-The application does not expose an outbound HTTP proxy. The `/redirect-to` endpoint emits a Location header without fetching the destination.
+The application does not expose an outbound HTTP proxy. The `/redirect-to` endpoint emits a Location header without fetching the destination. Digest challenge-response requires an HTTP client such as `curl --digest`; the browser playground does not negotiate Digest authentication. Conditional requests use strong If-Match comparison, weak If-None-Match comparison, and valid HTTP dates. Byte ranges support one range per request; multiple ranges are ignored.
 
 ## Project layout
 
