@@ -97,7 +97,7 @@ const messages = {
   "successHelp": "El cuerpo y los encabezados dependen del endpoint y sus parámetros.",
   "errorsHelp": "Los códigos HTTP de error esperados son respuestas, no fallos de la aplicación.",
   "runtimeHelp": "El entorno Workers o el navegador controlan ciertos encabezados, compresión y redirecciones. Usa cURL para probar HTTP sin procesar.",
-  "footDocs": "Sin estado · Cloudflare Workers · OpenAPI 3.1",
+  "footDocs": "Sin estado · Cloudflare Workers · OpenAPI 3.2.1",
   "live": "EN VIVO",
   "footPlayground": "Las solicitudes se envían desde tu navegador directamente al Worker.",
   "noParams": "No hay parámetros declarados; puedes añadir encabezados o parámetros de consulta.",

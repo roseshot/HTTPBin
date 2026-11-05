@@ -97,7 +97,7 @@ const messages = {
   "successHelp": "Antwoordinhoud en headers verschillen per eindpunt en parameter.",
   "errorsHelp": "Verwachte HTTP-foutcodes zijn antwoorden, geen applicatiefouten.",
   "runtimeHelp": "Sommige headers, compressie en omleidingen worden door Workers of de browser beheerd. Gebruik cURL voor ruwe HTTP-tests.",
-  "footDocs": "Statusloos · Cloudflare Workers · OpenAPI 3.1",
+  "footDocs": "Statusloos · Cloudflare Workers · OpenAPI 3.2.1",
   "live": "LIVE",
   "footPlayground": "Verzoeken gaan rechtstreeks vanuit je browser naar deze Worker.",
   "noParams": "Geen parameters gedefinieerd; voeg eigen queryparameters of headers toe.",

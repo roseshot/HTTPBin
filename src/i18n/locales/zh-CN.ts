@@ -97,7 +97,7 @@ const messages = {
   "successHelp": "响应正文和响应头由端点及测试参数决定。",
   "errorsHelp": "预期的 HTTP 错误码是响应结果，不代表程序失败。",
   "runtimeHelp": "部分底层响应头、压缩和重定向行为由 Workers 或浏览器控制。原始协议测试请使用 cURL。",
-  "footDocs": "无状态设计 · 运行于 Cloudflare Workers · OpenAPI 3.1",
+  "footDocs": "无状态设计 · 运行于 Cloudflare Workers · OpenAPI 3.2.1",
   "live": "实时",
   "footPlayground": "浏览器直接向此 Worker 发起请求。",
   "noParams": "没有声明参数，但仍可添加查询参数和请求头。",

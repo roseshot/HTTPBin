@@ -97,7 +97,7 @@ const messages = {
   "successHelp": "Yanıt içeriği ve başlıkları uç nokta ile parametrelere göre değişir.",
   "errorsHelp": "Beklenen HTTP hata kodları uygulama hatası değil, yanıttır.",
   "runtimeHelp": "Bazı başlıklar, sıkıştırma ve yönlendirmeler Workers veya tarayıcı tarafından yönetilir. Ham HTTP testleri için cURL kullanın.",
-  "footDocs": "Durumsuz · Cloudflare Workers · OpenAPI 3.1",
+  "footDocs": "Durumsuz · Cloudflare Workers · OpenAPI 3.2.1",
   "live": "CANLI",
   "footPlayground": "İstekler doğrudan tarayıcınızdan bu Worker'a gönderilir.",
   "noParams": "Tanımlı parametre yok; özel sorgu ve başlıklar eklenebilir.",

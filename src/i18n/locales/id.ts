@@ -97,7 +97,7 @@ const messages = {
   "successHelp": "Isi dan header respons bergantung pada endpoint dan parameternya.",
   "errorsHelp": "Kode galat HTTP yang diharapkan adalah respons, bukan kegagalan aplikasi.",
   "runtimeHelp": "Beberapa header, kompresi, dan pengalihan dikendalikan oleh Workers atau browser. Gunakan cURL untuk pengujian HTTP mentah.",
-  "footDocs": "Tanpa status · Cloudflare Workers · OpenAPI 3.1",
+  "footDocs": "Tanpa status · Cloudflare Workers · OpenAPI 3.2.1",
   "live": "LANGSUNG",
   "footPlayground": "Permintaan dikirim langsung dari browser Anda ke Worker ini.",
   "noParams": "Tidak ada parameter wajib; Anda dapat menambahkan query atau header.",

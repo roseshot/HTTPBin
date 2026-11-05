@@ -97,7 +97,7 @@ const messages = {
   "successHelp": "응답 본문과 헤더는 엔드포인트와 매개변수에 따라 달라집니다.",
   "errorsHelp": "예상된 HTTP 오류 코드는 응답이며 앱 오류가 아닙니다.",
   "runtimeHelp": "일부 헤더, 압축, 리디렉션은 Workers 또는 브라우저가 제어합니다. 원시 HTTP 테스트에는 cURL을 사용하세요.",
-  "footDocs": "상태 비저장 · Cloudflare Workers · OpenAPI 3.1",
+  "footDocs": "상태 비저장 · Cloudflare Workers · OpenAPI 3.2.1",
   "live": "실시간",
   "footPlayground": "요청은 브라우저에서 이 Worker로 직접 전송됩니다.",
   "noParams": "선언된 매개변수가 없습니다. 쿼리와 헤더를 추가할 수 있습니다.",

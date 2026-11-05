@@ -97,7 +97,7 @@ const messages = {
   "successHelp": "Corpo e intestazioni variano in base all’endpoint e ai parametri.",
   "errorsHelp": "I codici di errore HTTP previsti sono risposte, non errori dell’applicazione.",
   "runtimeHelp": "Alcune intestazioni, la compressione e i reindirizzamenti dipendono da Workers o dal browser. Usa cURL per il protocollo grezzo.",
-  "footDocs": "Senza stato · Cloudflare Workers · OpenAPI 3.1",
+  "footDocs": "Senza stato · Cloudflare Workers · OpenAPI 3.2.1",
   "live": "LIVE",
   "footPlayground": "Le richieste vengono inviate direttamente dal browser a questo Worker.",
   "noParams": "Non ci sono parametri dichiarati; puoi aggiungere query e intestazioni.",

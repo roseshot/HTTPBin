@@ -97,7 +97,7 @@ const messages = {
   "successHelp": "Nội dung và tiêu đề phản hồi thay đổi theo điểm cuối và tham số.",
   "errorsHelp": "Mã lỗi HTTP mong đợi là phản hồi, không phải lỗi ứng dụng.",
   "runtimeHelp": "Một số tiêu đề, nén và chuyển hướng do Workers hoặc trình duyệt kiểm soát. Dùng cURL để kiểm tra HTTP thô.",
-  "footDocs": "Không trạng thái · Cloudflare Workers · OpenAPI 3.1",
+  "footDocs": "Không trạng thái · Cloudflare Workers · OpenAPI 3.2.1",
   "live": "TRỰC TIẾP",
   "footPlayground": "Yêu cầu được gửi trực tiếp từ trình duyệt đến Worker này.",
   "noParams": "Không có tham số khai báo; bạn vẫn có thể thêm truy vấn và tiêu đề.",

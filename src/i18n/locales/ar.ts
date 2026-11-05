@@ -97,7 +97,7 @@ const messages = {
   "successHelp": "يعتمد محتوى الاستجابة وترويساتها على نقطة النهاية والمعلمات.",
   "errorsHelp": "رموز خطأ HTTP المتوقعة هي استجابات وليست أعطالاً في التطبيق.",
   "runtimeHelp": "تتحكم Workers أو المتصفحات في بعض الترويسات والضغط وإعادة التوجيه. استخدم cURL لاختبارات HTTP الخام.",
-  "footDocs": "دون حالة · Cloudflare Workers · OpenAPI 3.1",
+  "footDocs": "دون حالة · Cloudflare Workers · OpenAPI 3.2.1",
   "live": "مباشر",
   "footPlayground": "تُرسل الطلبات مباشرةً من المتصفح إلى هذا Worker.",
   "noParams": "لا توجد معلمات معلنة، ويمكن إضافة معلمات أو ترويسات.",

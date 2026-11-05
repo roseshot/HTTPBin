@@ -97,7 +97,7 @@ const messages = {
   "successHelp": "Le corps et les en-têtes varient selon l’endpoint et ses paramètres.",
   "errorsHelp": "Les erreurs HTTP attendues sont des réponses, pas des échecs de l’application.",
   "runtimeHelp": "Certains en-têtes, la compression et les redirections dépendent du runtime ou du navigateur. Utilisez cURL pour examiner HTTP brut.",
-  "footDocs": "Sans état · Cloudflare Workers · OpenAPI 3.1",
+  "footDocs": "Sans état · Cloudflare Workers · OpenAPI 3.2.1",
   "live": "EN DIRECT",
   "footPlayground": "Les requêtes partent directement de votre navigateur vers ce Worker.",
   "noParams": "Aucun paramètre déclaré ; vous pouvez ajouter des paramètres ou en-têtes.",

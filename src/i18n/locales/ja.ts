@@ -97,7 +97,7 @@ const messages = {
   "successHelp": "レスポンスの内容とヘッダーはエンドポイントやパラメーターによって異なります。",
   "errorsHelp": "想定される HTTP エラーコードはレスポンスであり、アプリの失敗ではありません。",
   "runtimeHelp": "一部のヘッダー、圧縮、リダイレクトは Workers またはブラウザーが制御します。生の HTTP テストには cURL を使用してください。",
-  "footDocs": "ステートレス · Cloudflare Workers · OpenAPI 3.1",
+  "footDocs": "ステートレス · Cloudflare Workers · OpenAPI 3.2.1",
   "live": "ライブ",
   "footPlayground": "ブラウザーからこの Worker へ直接リクエストを送信します。",
   "noParams": "定義済みパラメーターはありません。クエリやヘッダーを追加できます。",

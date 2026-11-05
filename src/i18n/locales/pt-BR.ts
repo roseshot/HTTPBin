@@ -97,7 +97,7 @@ const messages = {
   "successHelp": "O corpo e os cabeçalhos variam conforme o endpoint e os parâmetros.",
   "errorsHelp": "Códigos HTTP de erro esperados são respostas, não falhas do aplicativo.",
   "runtimeHelp": "Alguns cabeçalhos, compressão e redirecionamentos são controlados pelo Workers ou navegador. Use cURL para testes HTTP brutos.",
-  "footDocs": "Sem estado · Cloudflare Workers · OpenAPI 3.1",
+  "footDocs": "Sem estado · Cloudflare Workers · OpenAPI 3.2.1",
   "live": "AO VIVO",
   "footPlayground": "As requisições são enviadas diretamente do navegador a este Worker.",
   "noParams": "Nenhum parâmetro declarado; adicione consultas ou cabeçalhos personalizados.",

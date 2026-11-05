@@ -97,7 +97,7 @@ const messages = {
   "successHelp": "Antwortinhalt und Header hängen vom Endpunkt und seinen Parametern ab.",
   "errorsHelp": "Erwartete HTTP-Fehlercodes sind reguläre Antworten, keine Anwendungsfehler.",
   "runtimeHelp": "Einige Header, Komprimierung und Weiterleitungen steuern Workers oder Browser. Für rohe HTTP-Tests cURL verwenden.",
-  "footDocs": "Zustandslos · Cloudflare Workers · OpenAPI 3.1",
+  "footDocs": "Zustandslos · Cloudflare Workers · OpenAPI 3.2.1",
   "live": "LIVE",
   "footPlayground": "Anfragen werden direkt im Browser an diesen Worker gesendet.",
   "noParams": "Keine Parameter deklariert; eigene Query-Parameter und Header sind möglich.",

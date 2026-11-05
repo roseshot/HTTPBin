@@ -97,7 +97,7 @@ const messages = {
   "successHelp": "回應主體及標頭取決於端點與測試參數。",
   "errorsHelp": "預期的 HTTP 錯誤碼屬於回應，不代表程式執行失敗。",
   "runtimeHelp": "部分底層標頭、壓縮及重新導向行為由 Workers 或瀏覽器控制。請使用 cURL 進行原始協定測試。",
-  "footDocs": "無狀態設計 · 運行於 Cloudflare Workers · OpenAPI 3.1",
+  "footDocs": "無狀態設計 · 運行於 Cloudflare Workers · OpenAPI 3.2.1",
   "live": "即時",
   "footPlayground": "請求直接從瀏覽器送至此 Worker。",
   "noParams": "沒有宣告參數，但仍可加入查詢參數與標頭。",
