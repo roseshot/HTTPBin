@@ -50,6 +50,7 @@ The default `workers.dev` and preview URLs are disabled in `wrangler.jsonc`.
 ## Documentation
 
 - `/docs` — API explorer and playground
+- `/standards` — RFC coverage and limitations
 - `/openapi.json` — OpenAPI 3.1 specification
 - [HTTP semantics and runtime limitations](docs/http-semantics.md)
 

@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { endpoints, groups, type Endpoint, type Method } from "../shared/endpoints";
 import { Button } from "./components/ui/button";
+import StandardsPage from "./StandardsPage";
 import { TabsList, TabsPanel, TabsRoot, TabsTab } from "./components/ui/tabs";
 
 type Theme = "dark" | "light";
@@ -291,17 +292,20 @@ export default function App() {
     } catch (error) { setErrorMessage(error instanceof Error ? error.message : "Unable to copy request."); }
   };
 
-  return <div className="shell">
+  const showStandards = window.location.pathname === "/standards";
+
+  return <div className={"shell" + (showStandards ? " standards-shell" : "")}>
     <header className="topbar">
       <a className="brand" href="/" aria-label="HTTPBin home"><span className="brand-icon"><Terminal size={20} strokeWidth={2.4} /></span><div>http<span>bin</span></div><span className="product-label">Workers Edition</span></a>
       <nav className="topbar-right" aria-label="Site navigation">
         <a className="top-link" href="/docs"><Layers3 size={15} /><span>API Explorer</span></a>
         <a className="top-link" href="/openapi.json" target="_blank" rel="noreferrer"><FileJson2 size={15} /><span>OpenAPI</span></a>
+        <a className="top-link" href="/standards" aria-label="RFC coverage and limitations" aria-current={showStandards ? "page" : undefined}><ShieldCheck size={15} /><span>Standards</span></a>
         <span className="top-divider" />
         <button className="icon-button" aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"} onClick={toggleTheme}>{theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}</button>
       </nav>
     </header>
-    <main className="workspace">
+    {showStandards ? <StandardsPage /> : <main className="workspace">
       <aside className="sidebar" aria-label="Endpoint navigation">
         <div className="sidebar-heading"><strong>API ENDPOINTS</strong><span className="counter">{endpoints.length} endpoints</span></div>
         <div className="search-box"><Search size={15} /><input ref={searchRef} aria-label="Search endpoints" placeholder="Search endpoints..." value={search} onChange={(event) => setSearch(event.target.value)} /><span className="shortcut">⌘K</span></div>
@@ -340,7 +344,7 @@ export default function App() {
             <div className="doc-row"><div><code>4xx / 5xx</code><p>Expected HTTP error codes are returned as responses, not application failures.</p></div><span className="mini-badge">HTTP</span></div>
           </div>
         </div>
-        <div className="info-callout"><Info size={16} /><div><strong>Cloudflare Workers compatibility</strong><br />Some wire-level headers, compression behavior, and redirect details are controlled by the Workers runtime or browser. Use cURL for tests requiring raw HTTP semantics.</div></div>
+        <div className="info-callout"><Info size={16} /><div><strong>Cloudflare Workers compatibility</strong><br />Some wire-level headers, compression behavior, and redirect details are controlled by the Workers runtime or browser. Use cURL for tests requiring raw HTTP semantics. <a className="standards-inline-link" href="/standards">View RFC coverage and limitations →</a></div></div>
         <div className="footer-note"><ShieldCheck size={14} /> Stateless by design · Runs on Cloudflare Workers · OpenAPI 3.1</div>
       </article>
       <section className="playground" aria-label="HTTP Playground">
@@ -406,6 +410,6 @@ export default function App() {
           <div className="footer-note"><ShieldCheck size={14} /> Requests run directly in your browser against this Worker.</div>
         </div>
       </section>
-    </main>
+    </main>}
   </div>;
 }

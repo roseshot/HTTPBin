@@ -4,6 +4,8 @@ HTTPBin Workers is an HTTP test fixture and request inspector, not a byte-for-by
 
 ## Standards
 
+The live site's `/standards` page distinguishes implemented feature subsets, demonstrations, and runtime-controlled behavior. These classifications do not certify full conformance to entire RFCs.
+
 | Feature | Reference | Behavior |
 | --- | --- | --- |
 | Methods, status, headers, redirects, content types | RFC 9110 | GET/HEAD metadata, OPTIONS Allow, contentless statuses, and explicit redirect Location behavior |
