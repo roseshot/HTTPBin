@@ -22,7 +22,7 @@ describe("HTTP request inspection", () => {
     expect(data.form.name).toEqual(["alice", "bob"]);
   });
   test("accepts arbitrary methods and paths", async () => {
-    const response = await app.request("/anything/example", { method: "PATCH", body: "hello" });
+    const response = await app.request("/anything/example", { method: "PATCH", headers: { "content-type": "text/plain" }, body: "hello" });
     expect(response.status).toBe(200);
     expect((await response.json() as any).data).toBe("hello");
   });
