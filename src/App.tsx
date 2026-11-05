@@ -196,7 +196,7 @@ export default function App() {
     if (authType === "basic") requestHeaders.set("authorization", "Basic " + btoa(unescape(encodeURIComponent(username + ":" + password))));
     if (authType === "bearer") requestHeaders.set("authorization", "Bearer " + token);
     let payload: BodyInit | undefined;
-    if (method !== "GET" && method !== "HEAD" && bodyMode !== "none") {
+    if (method !== "GET" && bodyMode !== "none") {
       if (bodyMode === "json") { requestHeaders.set("content-type", "application/json"); payload = body; }
       else if (bodyMode === "text") { requestHeaders.set("content-type", "text/plain; charset=utf-8"); payload = body; }
       else if (bodyMode === "binary") { requestHeaders.set("content-type", "application/octet-stream"); payload = body; }
