@@ -4,6 +4,7 @@ import { MAX_BYTES, encoder, error, escapeHtml, headersObject, inspect, intParam
 import { openApi, swagger } from "./openapi";
 import { digestAuth } from "./digest";
 import { LAST_MODIFIED, ifRangeMatches, preconditionStatus, selectByteRange } from "./semantics";
+import { acceptsEncoding, negotiateImage } from "./negotiation";
 
 export const app = new Hono();
 
@@ -12,7 +13,7 @@ function allowedMethods(path: string): string[] {
   let found = false;
   for (const endpoint of endpoints) {
     const pattern = endpoint.path.split("/").map((segment) =>
-      segment.startsWith("{") && segment.endsWith("}") ? "[^/]+" : segment.replace(/[.*+?^$()|[\]\\]/g, "\\app.get("/openapi.json", (c) => json(openApi(new URL(c.req.url).origin)));")
+      segment.startsWith("{") && segment.endsWith("}") ? "[^/]+" : segment.replace(/[.*+?^$()|[\]\\]/g, "\\$&")
     ).join("/");
     if (new RegExp("^" + pattern + "$").test(path) || (endpoint.path === "/anything" && path.startsWith("/anything/"))) {
       found = true;
@@ -251,18 +252,18 @@ app.on(["GET", "HEAD"], "/range/:n", (c) => {
 });
 
 app.on(["GET", "HEAD"], "/cache", (c) => {
-  const etag = '"httpbin-cache"';
+  const etag = '"http-cache-v1"';
   const headers = new Headers({ etag, "last-modified": LAST_MODIFIED, "cache-control": "public, max-age=0" });
   const conditional = preconditionStatus(c.req.raw, etag, LAST_MODIFIED);
   if (conditional !== null) return new Response(null, { status: conditional, headers });
-  const response = json(requestInfo(c.req.raw), 200, headers);
+  const response = json({ resource: "cache", version: 1 }, 200, headers);
   return c.req.method === "HEAD" ? new Response(null, { status: 200, headers: response.headers }) : response;
 });
 
 app.get("/cache/:n", (c) => {
   const n = intParam(c.req.param("n"), 31536000);
   if (n === null) return error("Invalid cache lifetime.");
-  return json(requestInfo(c.req.raw), 200, { "cache-control": "public, max-age=" + n });
+  return json({ resource: "cache", maxAge: n }, 200, { "cache-control": "public, max-age=" + n });
 });
 
 app.on(["GET", "HEAD"], "/etag/:etag", (c) => {
@@ -272,7 +273,7 @@ app.on(["GET", "HEAD"], "/etag/:etag", (c) => {
   const headers = new Headers({ etag, "cache-control": "no-store" });
   const conditional = preconditionStatus(c.req.raw, etag);
   if (conditional !== null) return new Response(null, { status: conditional, headers });
-  const response = json(requestInfo(c.req.raw), 200, headers);
+  const response = json({ etag: value }, 200, headers);
   return c.req.method === "HEAD" ? new Response(null, { status: 200, headers: response.headers }) : response;
 });
 
@@ -282,11 +283,21 @@ app.get("/xml", () => new Response('<?xml version="1.0" encoding="utf-8"?><slide
 app.get("/encoding/utf8", () => new Response("UTF-8 sample: Hello, " + String.fromCodePoint(0x4e16, 0x754c) + "!\n", { headers: { "content-type": "text/plain; charset=utf-8" } }));
 
 function compressed(request: Request, format: "gzip" | "deflate" | "br"): Response {
+  if (!acceptsEncoding(request.headers.get("accept-encoding"), format)) {
+    return new Response(null, { status: 406, headers: { "vary": "Accept-Encoding", "cache-control": "no-store" } });
+  }
   const payload = JSON.stringify({ ...requestInfo(request), [format === "br" ? "brotli" : format]: true }) + "\n";
   try {
     const compressor = new CompressionStream(format as CompressionFormat);
     const stream = new Blob([payload]).stream().pipeThrough(compressor);
-    return new Response(stream, { headers: { "content-type": "application/json", "content-encoding": format, "cache-control": "no-store" } });
+    return new Response(stream, {
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        "content-encoding": format,
+        "vary": "Accept-Encoding",
+        "cache-control": "no-store",
+      },
+    });
   } catch { return error("This runtime does not support " + format + " encoding.", 501); }
 }
 app.get("/gzip", (c) => compressed(c.req.raw, "gzip"));
@@ -300,16 +311,18 @@ const samples: Record<string, string> = {
 };
 function imageResponse(kind: string): Response {
   if (kind === "svg") {
-    return new Response('<svg xmlns="http://www.w3.org/2000/svg" width="180" height="120" viewBox="0 0 180 120"><rect width="180" height="120" fill="#295dd9"/><circle cx="90" cy="60" r="28" fill="#fff"/></svg>', { headers: { "content-type": "image/svg+xml", "x-content-type-options": "nosniff" } });
+    return new Response('<svg xmlns="http://www.w3.org/2000/svg" width="180" height="120" viewBox="0 0 180 120"><rect width="180" height="120" fill="#295dd9"/><circle cx="90" cy="60" r="28" fill="#fff"/></svg>', { headers: { "content-type": "image/svg+xml", "x-content-type-options": "nosniff", "cache-control": "public, max-age=3600" } });
   }
   if (!(kind in samples)) return error("Unsupported image format.", 404);
   const data = atob(samples[kind]);
-  return new Response(Uint8Array.from(data, (byte) => byte.charCodeAt(0)), { headers: { "content-type": "image/" + kind, "x-content-type-options": "nosniff" } });
+  return new Response(Uint8Array.from(data, (byte) => byte.charCodeAt(0)), { headers: { "content-type": "image/" + kind, "x-content-type-options": "nosniff", "cache-control": "public, max-age=3600" } });
 }
 app.get("/image", (c) => {
-  const accept = c.req.header("accept") || "";
-  const found = ["webp", "svg", "png", "jpeg"].find((kind) => accept.includes(kind === "svg" ? "image/svg+xml" : "image/" + kind));
-  return imageResponse(found || "png");
+  const format = negotiateImage(c.req.header("accept") ?? null);
+  if (!format) return new Response(null, { status: 406, headers: { "vary": "Accept" } });
+  const response = imageResponse(format);
+  response.headers.set("vary", "Accept");
+  return response;
 });
 app.get("/image/:kind", (c) => imageResponse(c.req.param("kind")));
 
