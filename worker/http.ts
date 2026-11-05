@@ -89,7 +89,7 @@ export async function inspect(request: Request): Promise<Response> {
         const value: string | Blob = field;
         if (typeof value !== "string") {
           const content = new Uint8Array(await (value as unknown as File).arrayBuffer());
-          const mime = value.type || "application/octet-stream";
+          const mime = (value as unknown as File).type || "application/octet-stream";
           if (/^text\//.test(mime) || /^(application\/(?:json|xml|javascript))$/.test(mime)) {
             files[key] = new TextDecoder().decode(content);
           } else {
