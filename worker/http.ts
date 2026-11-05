@@ -88,7 +88,7 @@ export async function inspect(request: Request): Promise<Response> {
       for (const [key, field] of form.entries()) {
         const value: string | Blob = field;
         if (typeof value !== "string") {
-          const content = new Uint8Array(await value.arrayBuffer());
+          const content = new Uint8Array(await (value as unknown as File).arrayBuffer());
           files[key] = new TextDecoder().decode(content);
         } else if (!(key in values)) values[key] = value;
         else if (Array.isArray(values[key])) (values[key] as string[]).push(value);
