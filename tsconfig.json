@@ -1,30 +1,45 @@
 {
   "compilerOptions": {
     "target": "ES2026",
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable",
+      "WebWorker"
+    ],
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
     "strict": true,
     "noEmit": true,
-    "skipLibCheck": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
+    "skipLibCheck": true,
     "noUncheckedSideEffectImports": true,
     "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
     "allowImportingTsExtensions": true,
-    "allowArbitraryExtensions": true,
-    "resolveJsonModule": true
-  },
-  "files": [],
-  "references": [
-    {
-      "path": "./tsconfig.app.json"
-    },
-    {
-      "path": "./tsconfig.worker.json"
-    },
-    {
-      "path": "./tsconfig.node.json"
+    "resolveJsonModule": true,
+    "types": [
+      "bun",
+      "vite/client"
+    ],
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
     }
+  },
+  "include": [
+    "src",
+    "worker",
+    "shared",
+    "vite.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".wrangler"
   ]
 }
