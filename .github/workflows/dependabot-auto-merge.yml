@@ -1,58 +1,83 @@
 name: Dependabot auto-merge
 
 on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review]
+  push:
+    branches: [main]
   workflow_run:
     workflows: ["CI"]
     types: [completed]
+  schedule:
+    - cron: "17 1 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: write
   pull-requests: write
 
+concurrency:
+  group: dependabot-auto-merge
+  cancel-in-progress: false
+
 jobs:
   merge:
     if: >-
-      github.event.workflow_run.event == 'pull_request' &&
-      github.event.workflow_run.conclusion == 'success'
+      (github.event_name == 'pull_request_target' &&
+       github.event.pull_request.user.login == 'dependabot[bot]' &&
+       github.event.pull_request.base.ref == 'main') ||
+      github.event_name == 'push' ||
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.event == 'pull_request' &&
+       github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     steps:
-      - name: Merge verified Dependabot pull requests
+      - name: Enable auto-merge for eligible Dependabot pull requests
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
-          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_PR: ${{ github.event.pull_request.number || 0 }}
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha || '' }}
           VERIFIED_PRS: ${{ toJSON(github.event.workflow_run.pull_requests) }}
         run: |
           set -euo pipefail
-          base_sha="$(gh api "repos/$REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
-          while IFS= read -r checked; do
-            number="$(jq -r '.number' <<< "$checked")"
-            verified_base="$(jq -r '.base.sha' <<< "$checked")"
-            verified_head="$(jq -r '.head.sha' <<< "$checked")"
 
-            if [[ ! "$number" =~ ^[0-9]+$ ]] ||
-               [[ "$verified_base" != "$base_sha" ]] ||
-               [[ "$verified_head" != "$VERIFIED_SHA" ]]; then
-              continue
-            fi
+          gh api --paginate "repos/$REPOSITORY/pulls?state=open&per_page=100" |
+            jq -c --arg repo "$REPOSITORY" '
+              .[] | select(
+                .user.login == "dependabot[bot]" and
+                .base.ref == "main" and
+                .head.repo.full_name == $repo and
+                .draft == false
+              )
+            ' > "$RUNNER_TEMP/dependabot-prs.jsonl"
 
-            pr="$(gh api "repos/$REPOSITORY/pulls/$number")"
-            author="$(jq -r '.user.login' <<< "$pr")"
-            state="$(jq -r '.state' <<< "$pr")"
-            draft="$(jq -r '.draft' <<< "$pr")"
-            base="$(jq -r '.base.ref' <<< "$pr")"
+          while IFS= read -r pr; do
+            number="$(jq -r '.number' <<< "$pr")"
             head="$(jq -r '.head.sha' <<< "$pr")"
-            head_repository="$(jq -r '.head.repo.full_name' <<< "$pr")"
 
-            if [[ "$author" != "dependabot[bot]" ]] ||
-               [[ "$state" != "open" ]] ||
-               [[ "$draft" != "false" ]] ||
-               [[ "$base" != "main" ]] ||
-               [[ "$head" != "$VERIFIED_SHA" ]] ||
-               [[ "$head_repository" != "$REPOSITORY" ]]; then
+            if [[ "$EVENT_NAME" == "pull_request_target" && "$number" != "$EVENT_PR" ]]; then
               continue
             fi
 
-            gh pr merge "$number" --repo "$REPOSITORY" --squash --auto --match-head-commit "$VERIFIED_SHA"
-          done < <(jq -c '.[]' <<< "$VERIFIED_PRS")
+            if [[ "$EVENT_NAME" == "workflow_run" ]]; then
+              [[ "$head" == "$VERIFIED_SHA" ]] || continue
+              jq -e --argjson number "$number" --arg head "$head" '
+                any(.[]; .number == $number and .head.sha == $head)
+              ' <<< "$VERIFIED_PRS" > /dev/null || continue
+            fi
+
+            if [[ "$(jq -r '.auto_merge != null' <<< "$pr")" == "true" ]]; then
+              continue
+            fi
+
+            if gh pr merge "$number" --repo "$REPOSITORY" --squash --auto --match-head-commit "$head"; then
+              echo "Auto-merge enabled for pull request #$number"
+            else
+              echo "::warning::Could not enable auto-merge for pull request #$number"
+            fi
+          done < "$RUNNER_TEMP/dependabot-prs.jsonl"
