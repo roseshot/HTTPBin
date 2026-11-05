@@ -196,7 +196,7 @@ export default function App() {
     if (authType === "basic") requestHeaders.set("authorization", "Basic " + btoa(unescape(encodeURIComponent(username + ":" + password))));
     if (authType === "bearer") requestHeaders.set("authorization", "Bearer " + token);
     let payload: BodyInit | undefined;
-    if (method !== "GET" && bodyMode !== "none") {
+    if (method !== "GET" && method !== "HEAD" && method !== "OPTIONS" && bodyMode !== "none") {
       if (bodyMode === "json") { requestHeaders.set("content-type", "application/json"); payload = body; }
       else if (bodyMode === "text") { requestHeaders.set("content-type", "text/plain; charset=utf-8"); payload = body; }
       else if (bodyMode === "binary") { requestHeaders.set("content-type", "application/octet-stream"); payload = body; }
@@ -348,7 +348,7 @@ export default function App() {
         <div className="playground-scroller">
           <div className="caption"><Globe2 size={14} /> Request</div>
           <div className="request-bar">
-            <select aria-label="HTTP method" value={method} onChange={(event) => setMethod(event.target.value as Method)}>{["GET", "POST", "PUT", "PATCH", "DELETE"].map((value) => <option key={value}>{value}</option>)}</select>
+            <select aria-label="HTTP method" value={method} onChange={(event) => setMethod(event.target.value as Method)}>{["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"].map((value) => <option key={value}>{value}</option>)}</select>
             <input aria-label="Request path" value={path} onChange={(event) => setPath(event.target.value)} spellCheck={false} />
           </div>
           <div className="help-text"><Globe2 size={12} /><code>{window.location.origin}</code><span>·</span><span>Same-origin requests only</span></div>

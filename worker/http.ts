@@ -15,7 +15,7 @@ export function error(message: string, status = 400): Response {
 export function intParam(value: string | undefined, maximum: number, minimum = 0): number | null {
   if (value === undefined || !/^\d+$/.test(value)) return null;
   const number = Number(value);
-  return Number.isSafeInteger(number) && number >= minimum ? Math.min(number, maximum) : null;
+  return Number.isSafeInteger(number) && number >= minimum && number <= maximum ? number : null;
 }
 
 export function seconds(value: string | null | undefined, fallback = 0): number {
@@ -89,7 +89,16 @@ export async function inspect(request: Request): Promise<Response> {
         const value: string | Blob = field;
         if (typeof value !== "string") {
           const content = new Uint8Array(await (value as unknown as File).arrayBuffer());
-          files[key] = new TextDecoder().decode(content);
+          const mime = field.type || "application/octet-stream";
+          if (/^text\//.test(mime) || /^(application\/(?:json|xml|javascript))$/.test(mime)) {
+            files[key] = new TextDecoder().decode(content);
+          } else {
+            let binary = "";
+            for (const chunk of Array.from({ length: Math.ceil(content.length / 8192) }, (_, index) => content.subarray(index * 8192, (index + 1) * 8192))) {
+              binary += String.fromCharCode(...chunk);
+            }
+            files[key] = "data:" + mime + ";base64," + btoa(binary);
+          }
         } else if (!(key in values)) values[key] = value;
         else if (Array.isArray(values[key])) (values[key] as string[]).push(value);
         else values[key] = [values[key] as string, value];
@@ -122,9 +131,11 @@ export function randomBytes(count: number, seed?: string): Uint8Array {
 
 export function streamed(produce: (controller: ReadableStreamDefaultController<Uint8Array>) => Promise<void> | void, type: string, status = 200, headers?: HeadersInit): Response {
   const stream = new ReadableStream<Uint8Array>({
-    async start(controller) {
-      try { await produce(controller); controller.close(); }
-      catch (err) { controller.error(err); }
+    start(controller) {
+      void Promise.resolve().then(() => produce(controller)).then(
+        () => controller.close(),
+        (cause: unknown) => controller.error(cause),
+      );
     },
   });
   return new Response(stream, { status, headers: { "content-type": type, "cache-control": "no-store", ...Object.fromEntries(new Headers(headers)) } });

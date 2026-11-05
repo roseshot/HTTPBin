@@ -7,6 +7,36 @@ import { LAST_MODIFIED, ifRangeMatches, preconditionStatus, selectByteRange } fr
 
 export const app = new Hono();
 
+function allowedMethods(path: string): string[] {
+  const allowed = new Set<string>(["OPTIONS"]);
+  let found = false;
+  for (const endpoint of endpoints) {
+    const pattern = endpoint.path.split("/").map((segment) =>
+      segment.startsWith("{") && segment.endsWith("}") ? "[^/]+" : segment.replace(/[.*+?^$()|[\]\\]/g, "\\app.get("/openapi.json", (c) => json(openApi(new URL(c.req.url).origin)));")
+    ).join("/");
+    if (new RegExp("^" + pattern + "$").test(path) || (endpoint.path === "/anything" && path.startsWith("/anything/"))) {
+      found = true;
+      if (endpoint.method === "ANY") {
+        for (const method of ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"]) allowed.add(method);
+      } else {
+        allowed.add(endpoint.method);
+        if (endpoint.method === "GET") allowed.add("HEAD");
+      }
+    }
+  }
+  if (path === "/response-headers") { found = true; allowed.add("GET"); allowed.add("HEAD"); allowed.add("POST"); }
+  if (path.startsWith("/__meta/") || path === "/openapi.json" || path === "/spec.json") {
+    found = true; allowed.add("GET"); allowed.add("HEAD");
+  }
+  return found ? [...allowed] : [];
+}
+
+app.options("/*", (c) => {
+  const methods = allowedMethods(new URL(c.req.url).pathname);
+  if (!methods.length) return error("Endpoint not found.", 404);
+  return new Response(null, { status: 204, headers: { "allow": methods.join(", "), "cache-control": "no-store" } });
+});
+
 app.get("/openapi.json", (c) => json(openApi(new URL(c.req.url).origin)));
 app.get("/spec.json", (c) => json(swagger(new URL(c.req.url).origin)));
 app.get("/__meta/endpoints", () => json(endpoints));
@@ -23,18 +53,20 @@ app.get("/headers", (c) => json({ headers: headersObject(c.req.raw.headers) }));
 app.get("/user-agent", (c) => json({ "user-agent": c.req.header("user-agent") || "" }));
 
 function basic(request: Request, user: string, password: string, hidden: boolean): Response {
-  const authorization = request.headers.get("authorization") || "";
+  const match = /^Basic\s+(\S+)$/i.exec(request.headers.get("authorization") || "");
   let valid = false;
-  if (authorization.startsWith("Basic ")) {
+  if (match) {
     try {
-      const credentials = atob(authorization.substring(6));
+      const encoded = atob(match[1]);
+      const bytes = Uint8Array.from(encoded, (char) => char.charCodeAt(0));
+      const credentials = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
       const colon = credentials.indexOf(":");
       valid = colon >= 0 && credentials.slice(0, colon) === user && credentials.slice(colon + 1) === password;
     } catch { valid = false; }
   }
   if (valid) return json({ authenticated: true, user });
-  if (hidden) return new Response(null, { status: 404 });
-  return new Response(null, { status: 401, headers: { "www-authenticate": 'Basic realm="Fake Realm"' } });
+  if (hidden) return new Response(null, { status: 404, headers: { "cache-control": "no-store" } });
+  return new Response(null, { status: 401, headers: { "www-authenticate": 'Basic realm="HTTPBin", charset="UTF-8"', "cache-control": "no-store" } });
 }
 app.get("/basic-auth/:user/:passwd", (c) => basic(c.req.raw, c.req.param("user"), c.req.param("passwd"), false));
 app.get("/hidden-basic-auth/:user/:passwd", (c) => basic(c.req.raw, c.req.param("user"), c.req.param("passwd"), true));
@@ -111,19 +143,21 @@ function cookies(request: Request): Record<string, string> {
   return result;
 }
 app.get("/cookies", (c) => json({ cookies: cookies(c.req.raw) }));
+const cookieName = /^[!#$%&'*+\-.^_\x60|~0-9A-Za-z]+$/;
+
 app.get("/cookies/set", (c) => {
   const result = new Response(null, { status: 302, headers: { location: "/cookies", "cache-control": "no-store" } });
   for (const [key, value] of new URL(c.req.url).searchParams) {
-    if (!key || /[;=\r\n]/.test(key) || /[\r\n]/.test(value)) continue;
-    result.headers.append("set-cookie", encodeURIComponent(key) + "=" + encodeURIComponent(value) + "; Path=/; SameSite=Lax");
+    if (!cookieName.test(key)) continue;
+    result.headers.append("set-cookie", key + "=" + encodeURIComponent(value) + "; Path=/; SameSite=Lax" + (new URL(c.req.url).protocol === "https:" ? "; Secure" : ""));
   }
   return result;
 });
 app.get("/cookies/delete", (c) => {
   const result = new Response(null, { status: 302, headers: { location: "/cookies", "cache-control": "no-store" } });
   for (const key of new URL(c.req.url).searchParams.keys()) {
-    if (!key || /[;=\r\n]/.test(key)) continue;
-    result.headers.append("set-cookie", encodeURIComponent(key) + "=; Path=/; Max-Age=0; SameSite=Lax");
+    if (!cookieName.test(key)) continue;
+    result.headers.append("set-cookie", key + "=; Path=/; Max-Age=0; SameSite=Lax" + (new URL(c.req.url).protocol === "https:" ? "; Secure" : ""));
   }
   return result;
 });
@@ -149,7 +183,7 @@ app.get("/stream/:n", (c) => {
   const info = requestInfo(c.req.raw);
   return streamed((controller) => {
     for (let index = 0; index < n; index++) controller.enqueue(encoder.encode(JSON.stringify({ ...info, id: index }) + "\n"));
-  }, "application/json; charset=utf-8");
+  }, "application/x-ndjson; charset=utf-8");
 });
 app.get("/stream-bytes/:n", (c) => {
   const n = intParam(c.req.param("n"), MAX_BYTES);
@@ -245,7 +279,7 @@ app.on(["GET", "HEAD"], "/etag/:etag", (c) => {
 app.get("/json", () => json({ slideshow: { author: "Yours Truly", date: "date of publication", slides: [{ title: "Wake up to WonderWidgets!", type: "all" }, { items: ["Why WonderWidgets are great", "Who buys WonderWidgets"], title: "Overview", type: "all" }], title: "Sample Slide Show" } }));
 app.get("/html", () => new Response("<!doctype html><html lang=\"en\"><head><title>HTTPBin</title></head><body><h1>Herman Melville - Moby-Dick</h1><p>Call me Ishmael.</p></body></html>", { headers: { "content-type": "text/html; charset=utf-8" } }));
 app.get("/xml", () => new Response('<?xml version="1.0" encoding="utf-8"?><slideshow><title>Sample Slide Show</title><slide>Wake up to WonderWidgets!</slide></slideshow>', { headers: { "content-type": "application/xml; charset=utf-8" } }));
-app.get("/encoding/utf8", () => new Response("UTF-8 sample: Hello, " + String.fromCodePoint(0x4e16, 0x754c) + "!\n", { headers: { "content-type": "text/html; charset=utf-8" } }));
+app.get("/encoding/utf8", () => new Response("UTF-8 sample: Hello, " + String.fromCodePoint(0x4e16, 0x754c) + "!\n", { headers: { "content-type": "text/plain; charset=utf-8" } }));
 
 function compressed(request: Request, format: "gzip" | "deflate" | "br"): Response {
   const payload = JSON.stringify({ ...requestInfo(request), [format === "br" ? "brotli" : format]: true }) + "\n";
@@ -289,6 +323,13 @@ app.get("/links/:n", (c) => {
 app.get("/forms/post", () => new Response('<!doctype html><html><body><form method="post" action="/post"><label>Customer name <input name="custname"></label><label>Comments <textarea name="comments"></textarea></label><button type="submit">Submit</button></form></body></html>', { headers: { "content-type": "text/html; charset=utf-8" } }));
 app.get("/robots.txt", () => new Response("User-agent: *\nDisallow: /deny\n", { headers: { "content-type": "text/plain; charset=utf-8" } }));
 app.get("/deny", () => new Response("YOU SHOULDN'T BE HERE\n", { headers: { "content-type": "text/plain; charset=utf-8" } }));
+
+app.on("HEAD", "/*", async (c) => {
+  const get = new Request(c.req.url, { method: "GET", headers: c.req.raw.headers });
+  const response = await app.fetch(get);
+  void response.body?.cancel().catch(() => {});
+  return new Response(null, { status: response.status, headers: response.headers });
+});
 
 app.notFound((c) => error("Endpoint not found: " + escapeHtml(new URL(c.req.url).pathname), 404));
 app.onError(() => error("Internal server error.", 500));

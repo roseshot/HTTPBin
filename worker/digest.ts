@@ -57,23 +57,55 @@ function parseDigest(header: string): Record<string, string> {
   return values;
 }
 
-export async function digestAuth(request: Request, qop: string, username: string, password: string, algorithmName = "MD5"): Promise<Response> {
+const NONCE_TTL = 5 * 60 * 1000;
+const MAX_NONCES = 1024;
+const nonces = new Map<string, { expires: number; counters: Map<string, number> }>();
+
+function challenge(qop: string, algorithm: string, stale = false): Response {
+  const now = Date.now();
+  for (const [key, value] of nonces) if (value.expires <= now) nonces.delete(key);
+  while (nonces.size >= MAX_NONCES) nonces.delete(nonces.keys().next().value!);
+  const nonce = crypto.randomUUID();
+  nonces.set(nonce, { expires: now + NONCE_TTL, counters: new Map() });
+  const header = 'Digest realm="HTTPBin", nonce="' + nonce + '", qop="' + qop +
+    '", algorithm=' + algorithm + ', charset=UTF-8' + (stale ? ', stale=true' : "");
+  return new Response(null, { status: 401, headers: { "www-authenticate": header, "cache-control": "no-store" } });
+}
+
+export async function digestAuth(request: Request, qop: string, username: string, password: string, algorithmName = "SHA-256"): Promise<Response> {
   const algorithm = algorithmName.toUpperCase();
   if ((qop !== "auth" && qop !== "auth-int") || (algorithm !== "MD5" && algorithm !== "SHA-256")) {
     return error("Unsupported Digest authentication algorithm or quality of protection.");
   }
   const realm = "HTTPBin";
-  const nonce = btoa("httpbin-workers");
-  const challenge = 'Digest realm="' + realm + '", nonce="' + nonce + '", qop="' + qop + '", algorithm=' + algorithm;
-  const unauthorized = () => new Response(null, { status: 401, headers: { "www-authenticate": challenge } });
   const fields = parseDigest(request.headers.get("authorization") || "");
+  if (!Object.keys(fields).length) return challenge(qop, algorithm);
   const uri = new URL(request.url).pathname + new URL(request.url).search;
-  if (!fields.username || fields.username !== username || fields.realm !== realm || fields.nonce !== nonce ||
-      fields.uri !== uri || fields.qop !== qop || !fields.nc || !fields.cnonce || !fields.response) return unauthorized();
+  if (fields.username !== username || fields.realm !== realm ||
+      fields.uri !== uri || fields.qop !== qop ||
+      (fields.algorithm && fields.algorithm.toUpperCase() !== algorithm) ||
+      !fields.cnonce || !/^[0-9a-fA-F]{8}$/.test(fields.nc || "") ||
+      !/^[a-fA-F0-9]+$/.test(fields.response || "")) {
+    return challenge(qop, algorithm);
+  }
+
+  const nonce = nonces.get(fields.nonce);
+  if (!nonce || nonce.expires <= Date.now()) {
+    nonces.delete(fields.nonce);
+    return challenge(qop, algorithm, true);
+  }
+
+  const counter = Number.parseInt(fields.nc, 16);
+  const last = nonce.counters.get(fields.cnonce) ?? 0;
+  if (counter <= last) return challenge(qop, algorithm);
+
   const selected = algorithm as "MD5" | "SHA-256";
   const ha1 = await hash(username + ":" + realm + ":" + password, selected);
   const bodyHash = await hash("", selected);
   const ha2 = await hash(request.method + ":" + uri + (qop === "auth-int" ? ":" + bodyHash : ""), selected);
-  const expected = await hash([ha1, nonce, fields.nc, fields.cnonce, qop, ha2].join(":"), selected);
-  return fields.response.toLowerCase() === expected ? json({ authenticated: true, user: username }) : unauthorized();
+  const expected = await hash([ha1, fields.nonce, fields.nc, fields.cnonce, qop, ha2].join(":"), selected);
+  if (fields.response.toLowerCase() !== expected) return challenge(qop, algorithm);
+
+  nonce.counters.set(fields.cnonce, counter);
+  return json({ authenticated: true, user: username });
 }

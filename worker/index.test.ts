@@ -37,7 +37,7 @@ describe("HTTP response behavior", () => {
   test("supports MD5 Digest authentication", async () => {
     expect(md5Hex("")).toBe("d41d8cd98f00b204e9800998ecf8427e");
     expect(md5Hex("abc")).toBe("900150983cd24fb0d6963f7d28e17f72");
-    const uri = "/digest-auth/auth/demo/secret";
+    const uri = "/digest-auth/auth/demo/secret/MD5";
     const challenge = await app.request(uri);
     expect(challenge.status).toBe(401);
     const header = challenge.headers.get("www-authenticate") || "";

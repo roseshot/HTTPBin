@@ -19,9 +19,9 @@ describe("HTTP preconditions", () => {
     expect((await app.request("/cache", { headers: { "if-modified-since": modified } })).status).toBe(304);
     expect((await app.request("/cache", { headers: { "if-modified-since": "Wed, 21 Oct 2015 07:27:59 GMT" } })).status).toBe(200);
     expect((await app.request("/cache", { headers: { "if-unmodified-since": "Wed, 21 Oct 2015 07:27:59 GMT" } })).status).toBe(412);
-    expect((await app.request("/cache", { headers: { "if-match": '"httpbin-cache"', "if-unmodified-since": "Wed, 21 Oct 2015 07:27:59 GMT" } })).status).toBe(200);
+    expect((await app.request("/cache", { headers: { "if-match": '"http-cache-v1"', "if-unmodified-since": "Wed, 21 Oct 2015 07:27:59 GMT" } })).status).toBe(200);
     expect((await app.request("/cache", { headers: { "if-none-match": '"different"', "if-modified-since": modified } })).status).toBe(200);
-    expect((await app.request("/cache", { headers: { "if-match": '"wrong"', "if-none-match": '"httpbin-cache"' } })).status).toBe(412);
+    expect((await app.request("/cache", { headers: { "if-match": '"wrong"', "if-none-match": '"http-cache-v1"' } })).status).toBe(412);
   });
 
   test("uses method-sensitive If-None-Match status", () => {
