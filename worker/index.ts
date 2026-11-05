@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { endpoints } from "../shared/endpoints";
 import { MAX_BYTES, encoder, error, escapeHtml, headersObject, inspect, intParam, json, origin, queryObject, randomBytes, requestInfo, seconds, sleep, streamed } from "./http";
 import { openApi, swagger } from "./openapi";
+import { digestAuth } from "./digest";
 
 export const app = new Hono();
 
@@ -36,6 +37,8 @@ function basic(request: Request, user: string, password: string, hidden: boolean
 }
 app.get("/basic-auth/:user/:passwd", (c) => basic(c.req.raw, c.req.param("user"), c.req.param("passwd"), false));
 app.get("/hidden-basic-auth/:user/:passwd", (c) => basic(c.req.raw, c.req.param("user"), c.req.param("passwd"), true));
+app.get("/digest-auth/:qop/:user/:passwd", (c) => digestAuth(c.req.raw, c.req.param("qop"), c.req.param("user"), c.req.param("passwd")));
+app.get("/digest-auth/:qop/:user/:passwd/:algorithm", (c) => digestAuth(c.req.raw, c.req.param("qop"), c.req.param("user"), c.req.param("passwd"), c.req.param("algorithm")));
 app.get("/bearer", (c) => {
   const match = /^Bearer\s+(\S+)$/i.exec(c.req.header("authorization") || "");
   return match ? json({ authenticated: true, token: match[1] }) : new Response(null, { status: 401, headers: { "www-authenticate": "Bearer" } });

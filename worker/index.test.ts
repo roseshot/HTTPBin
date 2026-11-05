@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import app from "./index";
+import { md5Hex } from "./digest";
 
 describe("HTTP request inspection", () => {
   test("echoes GET query parameters and headers", async () => {
@@ -33,6 +34,25 @@ describe("HTTP request inspection", () => {
 });
 
 describe("HTTP response behavior", () => {
+  test("supports MD5 Digest authentication", async () => {
+    expect(md5Hex("")).toBe("d41d8cd98f00b204e9800998ecf8427e");
+    expect(md5Hex("abc")).toBe("900150983cd24fb0d6963f7d28e17f72");
+    const uri = "/digest-auth/auth/demo/secret";
+    const challenge = await app.request(uri);
+    expect(challenge.status).toBe(401);
+    const header = challenge.headers.get("www-authenticate") || "";
+    const nonce = /nonce="([^"]+)"/.exec(header)?.[1];
+    expect(nonce).toBeTruthy();
+    const realm = "HTTPBin";
+    const nc = "00000001", cnonce = "test-client";
+    const ha1 = md5Hex("demo:" + realm + ":secret");
+    const ha2 = md5Hex("GET:" + uri);
+    const response = md5Hex([ha1, nonce, nc, cnonce, "auth", ha2].join(":"));
+    const authorization = 'Digest username="demo", realm="' + realm + '", nonce="' + nonce + '", uri="' + uri + '", qop=auth, nc=' + nc + ', cnonce="' + cnonce + '", response="' + response + '"';
+    const authenticated = await app.request(uri, { headers: { authorization } });
+    expect(authenticated.status).toBe(200);
+    expect((await authenticated.json() as any).authenticated).toBe(true);
+  });
   test("implements basic and bearer authentication", async () => {
     expect((await app.request("/basic-auth/demo/secret")).status).toBe(401);
     const basic = await app.request("/basic-auth/demo/secret", { headers: { authorization: "Basic " + btoa("demo:secret") } });

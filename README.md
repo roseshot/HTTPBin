@@ -42,7 +42,7 @@ Authentication to Cloudflare is required before deployment. The deployment uses 
 - `/spec.json`: Swagger 2.0 compatibility specification
 - `/__meta/endpoints`: machine-readable endpoint catalog
 
-The playground supports query parameters, request headers, JSON and text bodies, URL-encoded and multipart forms, Basic and Bearer authentication, cURL export, streaming responses, header inspection, and response timing. Requests are restricted to the same origin in the browser.
+The playground supports query parameters, request headers, JSON and text bodies, URL-encoded and multipart forms, Basic, Digest, and Bearer authentication, cURL export, streaming responses, header inspection, and response timing. Requests are restricted to the same origin in the browser.
 
 ## HTTP endpoints
 
@@ -54,6 +54,7 @@ For example:
 curl 'http://localhost:5173/get?name=example'
 curl -X POST 'http://localhost:5173/post' -H 'Content-Type: application/json' -d '{"hello":"world"}'
 curl -i 'http://localhost:5173/status/418'
+curl --digest -u demo:secret 'http://localhost:5173/digest-auth/auth/demo/secret'
 curl -N 'http://localhost:5173/stream/5'
 ```
 
