@@ -1,0 +1,58 @@
+name: Dependabot auto-merge
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  merge:
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge verified Dependabot pull requests
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+          VERIFIED_PRS: ${{ toJSON(github.event.workflow_run.pull_requests) }}
+        run: |
+          set -euo pipefail
+          base_sha="$(gh api "repos/$REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
+          while IFS= read -r checked; do
+            number="$(jq -r '.number' <<< "$checked")"
+            verified_base="$(jq -r '.base.sha' <<< "$checked")"
+            verified_head="$(jq -r '.head.sha' <<< "$checked")"
+
+            if [[ ! "$number" =~ ^[0-9]+$ ]] ||
+               [[ "$verified_base" != "$base_sha" ]] ||
+               [[ "$verified_head" != "$VERIFIED_SHA" ]]; then
+              continue
+            fi
+
+            pr="$(gh api "repos/$REPOSITORY/pulls/$number")"
+            author="$(jq -r '.user.login' <<< "$pr")"
+            state="$(jq -r '.state' <<< "$pr")"
+            draft="$(jq -r '.draft' <<< "$pr")"
+            base="$(jq -r '.base.ref' <<< "$pr")"
+            head="$(jq -r '.head.sha' <<< "$pr")"
+            head_repository="$(jq -r '.head.repo.full_name' <<< "$pr")"
+
+            if [[ "$author" != "dependabot[bot]" ]] ||
+               [[ "$state" != "open" ]] ||
+               [[ "$draft" != "false" ]] ||
+               [[ "$base" != "main" ]] ||
+               [[ "$head" != "$VERIFIED_SHA" ]] ||
+               [[ "$head_repository" != "$REPOSITORY" ]]; then
+              continue
+            fi
+
+            gh pr merge "$number" --repo "$REPOSITORY" --squash --auto --match-head-commit "$VERIFIED_SHA"
+          done < <(jq -c '.[]' <<< "$VERIFIED_PRS")

@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "bun run typecheck && vite build",
     "preview": "vite preview",
     "test": "bun test",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -b",
     "deploy": "bun run build && wrangler deploy"
   },
   "dependencies": {
@@ -29,7 +29,7 @@
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.1.0",
     "tailwindcss": "^4.1.0",
-    "typescript": "^5.9.0",
+    "typescript": "^7.1.0-beta",
     "vite": "^7.1.0",
     "wrangler": "^4.45.0"
   }
