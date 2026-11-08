@@ -39,6 +39,16 @@ bun test
 bun run build
 ```
 
+## Project layout
+
+- `src/` contains the React interface; Playground request editing, execution, copying, and response rendering live in `src/features/playground/`.
+- `src/styles/` separates theme, layout, Playground, standards, responsive, and localization styles.
+- `worker/index.ts` registers Hono routes from `worker/routes/`; reusable HTTP logic lives in `worker/lib/`, and deterministic image data lives in `worker/fixtures/`.
+- `shared/` contains endpoint metadata and RFC coverage shared by the API and interface.
+- Tests live beside the corresponding modules or in `worker/` for API-level integration coverage.
+
+Dependencies are pinned in `bun.lock`. CI uses `bun install --frozen-lockfile` before tests and builds.
+
 ## Deployment
 
 Authenticate with Cloudflare, configure a custom domain or route, then run:

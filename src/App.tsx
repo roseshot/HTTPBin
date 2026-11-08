@@ -1,11 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  Activity, ArrowRight, Check, ChevronDown, ChevronRight, Clock3, Code2, Copy,
-  FileJson2, Globe2, Info, Languages, Layers3, Moon, Play, Plus, RotateCw, Search,
-  Send, ShieldCheck, Sun, Terminal, Trash2, Zap,
+  Activity, ChevronDown, ChevronRight, FileJson2, Info, Languages, Layers3,
+  Moon, Search, ShieldCheck, Sun, Terminal, Zap,
 } from "lucide-react";
 import { endpoints, groups, type Endpoint, type Method } from "../shared/endpoints";
-import { Button } from "./components/ui/button";
 import { RequestActions } from "./features/playground/RequestActions";
 import { RequestEditor } from "./features/playground/RequestEditor";
 import { ResponseViewer } from "./features/playground/ResponseViewer";
@@ -14,7 +12,6 @@ import { pair, type BodyMode, type Pair, type RequestTab, type ResponseTab, type
 import { useI18n } from "./i18n";
 import type { MessageKey } from "./i18n/schema";
 import StandardsPage from "./StandardsPage";
-import { TabsList, TabsPanel, TabsRoot, TabsTab } from "./components/ui/tabs";
 
 type Theme = "dark" | "light";
 const groupKeys: Record<Endpoint["group"], { title: MessageKey; description: MessageKey }> = {

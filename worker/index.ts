@@ -10,6 +10,7 @@ import { registerUuidRoutes } from "./routes/uuid";
 import { registerStreamingRoutes } from "./routes/streaming";
 import { registerCachingRoutes } from "./routes/caching";
 import { registerFormatRoutes } from "./routes/formats";
+import { registerImageRoutes } from "./routes/images";
 import { registerUtilityRoutes } from "./routes/utilities";
 
 export const app = new Hono();
@@ -53,6 +54,7 @@ registerUuidRoutes(app);
 registerStreamingRoutes(app);
 registerCachingRoutes(app);
 registerFormatRoutes(app);
+registerImageRoutes(app);
 registerUtilityRoutes(app);
 
 app.on("HEAD", "/*", async (c) => {
