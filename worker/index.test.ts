@@ -112,3 +112,42 @@ describe("HTTP response behavior", () => {
     expect(swagger.swagger).toBe("2.0");
   });
 });
+
+describe("Image responses", () => {
+  for (const format of ["png", "jpeg", "webp"] as const) {
+    test(`serves a 180x120 ${format.toUpperCase()} image`, async () => {
+      const response = await app.request(`/image/${format}`);
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toBe(`image/${format}`);
+
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      expect(bytes.length).toBeGreaterThan(100);
+      if (format === "png") {
+        expect(Array.from(bytes.slice(0, 8))).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
+        const data = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+        expect(data.getUint32(16)).toBe(180);
+        expect(data.getUint32(20)).toBe(120);
+      } else if (format === "jpeg") {
+        expect(Array.from(bytes.slice(0, 3))).toEqual([255, 216, 255]);
+        expect(Array.from(bytes.slice(-2))).toEqual([255, 217]);
+        const start = bytes.findIndex((byte, index) => byte === 255 && bytes[index + 1] === 192);
+        expect(start).toBeGreaterThan(0);
+        expect((bytes[start + 7] << 8) | bytes[start + 8]).toBe(180);
+        expect((bytes[start + 5] << 8) | bytes[start + 6]).toBe(120);
+      } else {
+        const label = new TextDecoder().decode(bytes.subarray(0, 16));
+        expect(label.slice(0, 4)).toBe("RIFF");
+        expect(label.slice(8, 16)).toBe("WEBPVP8 ");
+        expect(((bytes[27] << 8) | bytes[26]) & 0x3fff).toBe(180);
+        expect(((bytes[29] << 8) | bytes[28]) & 0x3fff).toBe(120);
+      }
+    });
+  }
+
+  test("negotiates JPEG images", async () => {
+    const response = await app.request("/image", { headers: { accept: "image/jpeg" } });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("image/jpeg");
+    expect(response.headers.get("vary")).toBe("Accept");
+  });
+});
