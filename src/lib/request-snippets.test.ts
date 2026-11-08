@@ -13,8 +13,9 @@ function request(overrides: Partial<Parameters<typeof formatRequest>[1]> = {}) {
 }
 
 describe("Request snippets", () => {
-  test("offers cURL, HTTPie, JavaScript Fetch, and Python Requests", () => {
-    expect(requestTools.map(({ id }) => id)).toEqual(["curl", "httpie", "fetch", "python"]);
+  test("offers cURL, HTTPie, JavaScript Fetch, Python Requests, and PowerShell", () => {
+    expect(requestTools.map(({ id }) => id)).toEqual(["curl", "httpie", "fetch", "python", "pwsh"]);
+    expect(requestTools.find(({ id }) => id === "pwsh")?.label).toBe("PowerShell (pwsh)");
   });
 
   test("escapes shell values and follows redirects in cURL", () => {
@@ -73,10 +74,45 @@ describe("Request snippets", () => {
     expect(python).toContain('files=[("upload", (None, "@not-a-file"))');
   });
 
+
+  test("generates PowerShell requests with escaped headers, bodies, and redirect options", () => {
+    const snippet = formatRequest("pwsh", request());
+    expect(snippet).toContain("$response = Invoke-WebRequest");
+    expect(snippet).toContain("-Uri 'https://example.com/post?name=first&name=second'");
+    expect(snippet).toContain("-Method 'POST'");
+    expect(snippet).toContain("'x-demo' = 'O''Reilly'");
+    expect(snippet).toContain("-Body '{\"message\":\"hello\"}'");
+    expect(snippet).toContain("-SkipHttpErrorCheck");
+    expect(snippet).not.toContain("-MaximumRedirection");
+    const noRedirect = formatRequest("pwsh", request({ followRedirects: false }));
+    expect(noRedirect).toContain("-MaximumRedirection 0");
+    expect(formatRequest("pwsh", request({ method: "QUERY" }))).toContain("-CustomMethod 'QUERY'");
+    expect(formatRequest("pwsh", request({ method: "QUERY" }))).not.toContain("-Method 'QUERY'");
+  });
+
+  test("generates PowerShell multipart forms with repeated names and safe quoting", () => {
+    const form = new FormData();
+    form.append("tag", "first");
+    form.append("tag", "second");
+    form.append("description", "O'Reilly $value");
+    const snippet = formatRequest("pwsh", request({ payload: form, headers: new Headers() }));
+    expect(snippet).toContain("-Form @{");
+    expect(snippet).toContain("'tag' = @('first', 'second')");
+    expect(snippet).toContain("'description' = 'O''Reilly $value'");
+    expect(snippet).not.toContain(" -Body ");
+    const formEncoded = formatRequest("pwsh", request({
+      payload: new URLSearchParams([["name", "one"], ["name", "two"]]),
+      headers: new Headers({ "content-type": "application/x-www-form-urlencoded" }),
+    }));
+    expect(formEncoded).toContain("-Body 'name=one&name=two'");
+  });
+
   test("omits request bodies when none were configured", () => {
     const input = request({ method: "GET", payload: undefined });
     expect(formatRequest("curl", input)).not.toContain("--data-raw");
     expect(formatRequest("fetch", input)).not.toContain("body:");
     expect(formatRequest("python", input)).not.toContain("data=");
+    expect(formatRequest("pwsh", input)).not.toContain(" -Body ");
+    expect(formatRequest("pwsh", input)).not.toContain(" -Form ");
   });
 });

@@ -3,6 +3,7 @@ export const requestTools = [
   { id: "httpie", label: "HTTPie" },
   { id: "fetch", label: "JavaScript Fetch" },
   { id: "python", label: "Python Requests" },
+  { id: "pwsh", label: "PowerShell (pwsh)" },
 ] as const;
 
 export type RequestTool = typeof requestTools[number]["id"];
@@ -17,6 +18,23 @@ export type SnippetRequest = {
 
 function shellQuote(value: string): string {
   return "'" + value.replace(/'/g, "'\\''") + "'";
+}
+
+function powerShellQuote(value: string): string {
+  return "'" + value.replace(/'/g, "''") + "'";
+}
+
+function powerShellFields(entries: [string, string][]): string {
+  const grouped = new Map<string, string[]>();
+  for (const [name, value] of entries) {
+    const values = grouped.get(name) ?? [];
+    values.push(value);
+    grouped.set(name, values);
+  }
+  return "@{ " + Array.from(grouped, ([name, values]) =>
+    powerShellQuote(name) + " = " + (values.length === 1 ? powerShellQuote(values[0]) :
+      "@(" + values.map(powerShellQuote).join(", ") + ")"),
+  ).join("; ") + " }";
 }
 
 function fields(payload: FormData): [string, string][] {
@@ -74,6 +92,20 @@ export function formatRequest(tool: RequestTool, request: SnippetRequest): strin
       ...(bodyExpression === undefined ? [] : ["body: " + bodyExpression]),
     ];
     return [...prefix, "const response = await fetch(" + JSON.stringify(url.href) + ", {", ...init.map((line) => "  " + line.replace(/\n/g, "\n  ") + ","), "});"].join("\n");
+  }
+
+  if (tool === "pwsh") {
+    const args = [
+      "Invoke-WebRequest",
+      "-Uri", powerShellQuote(url.href),
+      method === "QUERY" ? "-CustomMethod" : "-Method", powerShellQuote(method),
+    ];
+    if (pairs.length) args.push("-Headers", powerShellFields(pairs));
+    if (payload instanceof FormData) args.push("-Form", powerShellFields(fields(payload)));
+    else if (body !== null) args.push("-Body", powerShellQuote(body));
+    if (!followRedirects) args.push("-MaximumRedirection", "0");
+    args.push("-SkipHttpErrorCheck");
+    return "$response = " + args.join(" ");
   }
 
   if (tool === "python") {

@@ -147,6 +147,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [toolMenuOpen, setToolMenuOpen] = useState(false);
+  const [selectedTool, setSelectedTool] = useState<RequestTool>("curl");
   const copyMenuRef = useRef<HTMLDivElement>(null);
   const copyMenuItemsRef = useRef<HTMLDivElement>(null);
   const copyMenuTriggerRef = useRef<HTMLButtonElement>(null);
@@ -354,6 +355,9 @@ export default function App() {
     } catch (error) { setErrorMessage(error instanceof Error ? error.message : t("errorCopy")); }
   };
 
+  const selectedToolLabel = requestTools.find((tool) => tool.id === selectedTool)?.label ?? "cURL";
+  const copyButtonLabel = t("copyCurl").replace("cURL", selectedToolLabel);
+
   const showStandards = window.location.pathname === "/standards";
 
   return <div className={"shell" + (showStandards ? " standards-shell" : "")}>
@@ -446,10 +450,10 @@ export default function App() {
           <label className="checkbox-row"><input type="checkbox" checked={followRedirect} onChange={(event) => setFollowRedirect(event.target.checked)} /> {t("followRedirects")}</label>
           <div className="request-actions">
             <div className="copy-split" ref={copyMenuRef}>
-              <Button variant="secondary" size="small" className="copy-split-main" onClick={() => void copyRequest("curl")}>{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? t("copied") : t("copyCurl")}</Button>
-              <Button variant="secondary" size="small" className="copy-split-arrow" ref={copyMenuTriggerRef} aria-label={t("copyCurl") + " formats"} aria-haspopup="menu" aria-expanded={toolMenuOpen} onClick={() => setToolMenuOpen((open) => !open)}><ChevronDown size={14} aria-hidden="true" /></Button>
-              {toolMenuOpen && <div className="copy-menu" role="menu" ref={copyMenuItemsRef} aria-label={t("copyCurl")} onKeyDown={navigateCopyMenu}>
-                {requestTools.map((tool) => <button type="button" key={tool.id} role="menuitem" className="copy-menu-item" onClick={() => void copyRequest(tool.id)}>{tool.label}</button>)}
+              <Button variant="secondary" size="small" className="copy-split-main" onClick={() => void copyRequest(selectedTool)}>{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? t("copied") + " · " + selectedToolLabel : copyButtonLabel}</Button>
+              <Button variant="secondary" size="small" className="copy-split-arrow" ref={copyMenuTriggerRef} aria-label={copyButtonLabel + " formats"} aria-haspopup="menu" aria-expanded={toolMenuOpen} onClick={() => setToolMenuOpen((open) => !open)}><ChevronDown size={14} aria-hidden="true" /></Button>
+              {toolMenuOpen && <div className="copy-menu" role="menu" ref={copyMenuItemsRef} aria-label={copyButtonLabel} onKeyDown={navigateCopyMenu}>
+                {requestTools.map((tool) => <button type="button" key={tool.id} role="menuitem" aria-current={selectedTool === tool.id ? "true" : undefined} className="copy-menu-item" onClick={() => { setSelectedTool(tool.id); void copyRequest(tool.id); }}>{tool.label}</button>)}
               </div>}
             </div>
             <Button variant="primary" className="send" disabled={loading} onClick={() => void sendRequest()}>{loading ? <RotateCw size={15} className="animate-spin" /> : <Play size={15} fill="currentColor" />}{loading ? t("sending") : t("send")}<ArrowRight size={15} /></Button>
