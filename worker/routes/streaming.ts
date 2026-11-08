@@ -1,5 +1,5 @@
 import type { Hono } from "hono";
-import { MAX_BYTES, encoder, error, intParam, randomBytes, requestInfo, seconds, sleep, streamed } from "../lib/http";
+import { MAX_BYTES, encoder, error, intParam, json, randomBytes, requestInfo, seconds, sleep, streamed } from "../lib/http";
 import { LAST_MODIFIED, ifRangeMatches, preconditionStatus, selectByteRanges } from "../lib/semantics";
 
 export function registerStreamingRoutes(app: Hono): void {
