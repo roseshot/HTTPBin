@@ -1,4 +1,4 @@
-import { endpoints, type Endpoint } from "../shared/endpoints";
+import { endpoints, type Endpoint } from "../../shared/endpoints";
 
 const binary = { schema: { type: "string", format: "binary" } };
 const successContent = {

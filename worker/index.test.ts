@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import app from "./index";
-import { md5Hex } from "./digest";
+import { md5Hex } from "./lib/digest";
 
 describe("HTTP request inspection", () => {
   test("echoes GET query parameters and headers", async () => {

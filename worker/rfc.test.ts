@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import app from "./index";
-import { acceptsEncoding, negotiateImage } from "./negotiation";
-import { md5Hex } from "./digest";
+import { acceptsEncoding, negotiateImage } from "./lib/negotiation";
+import { md5Hex } from "./lib/digest";
 
 describe("RFC 9110 method and representation semantics", () => {
   test("exposes resource-specific Allow headers", async () => {

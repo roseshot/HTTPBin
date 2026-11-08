@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import app from "./index";
-import { digestBytes, digestField, matchDigestField, parseDigestDictionary, preferMinimal } from "./protocol";
-import { selectByteRanges } from "./semantics";
+import { digestBytes, digestField, matchDigestField, parseDigestDictionary, preferMinimal } from "./lib/protocol";
+import { selectByteRanges } from "./lib/semantics";
 
 describe("RFC 9457 and RFC 9110 error semantics", () => {
   test("returns Problem Details with an HTTP-appropriate status", async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import app from "./index";
+import app from "../index";
 import { LAST_MODIFIED, ifRangeMatches, preconditionStatus, selectByteRange } from "./semantics";
 
 describe("HTTP preconditions", () => {
