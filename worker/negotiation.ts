@@ -10,24 +10,28 @@ function parseWeights(header: string): Range[] {
   }).filter((entry) => entry.value !== "");
 }
 
-export type ImageFormat = "png" | "jpeg" | "webp" | "svg";
+export type ImageFormat = "png" | "jpeg" | "webp" | "svg" | "gif" | "avif" | "bmp" | "ico";
 
 const imageTypes: Record<ImageFormat, string> = {
   png: "image/png",
   jpeg: "image/jpeg",
   webp: "image/webp",
   svg: "image/svg+xml",
+  gif: "image/gif",
+  avif: "image/avif",
+  bmp: "image/bmp",
+  ico: "image/x-icon",
 };
 
 export function negotiateImage(accept: string | null): ImageFormat | null {
   if (accept === null || accept.trim() === "") return "png";
   const ranges = parseWeights(accept);
   let best: { format: ImageFormat; quality: number; specificity: number; order: number } | null = null;
-  for (const format of ["png", "webp", "jpeg", "svg"] as const) {
+  for (const format of ["png", "webp", "jpeg", "svg", "gif", "avif", "bmp", "ico"] as const) {
     const mediaType = imageTypes[format];
     let selected: { quality: number; specificity: number; order: number } | null = null;
     for (const range of ranges) {
-      const specificity = range.value === mediaType ? 2 : range.value === "image/*" ? 1 : range.value === "*/*" ? 0 : -1;
+      const specificity = range.value === mediaType || (format === "ico" && range.value === "image/vnd.microsoft.icon") ? 2 : range.value === "image/*" ? 1 : range.value === "*/*" ? 0 : -1;
       if (specificity < 0) continue;
       if (!selected || specificity > selected.specificity || (specificity === selected.specificity && range.order < selected.order)) {
         selected = { quality: range.quality, specificity, order: range.order };

@@ -6,8 +6,17 @@ import { digestAuth } from "./digest";
 import { LAST_MODIFIED, ifRangeMatches, preconditionStatus, selectByteRanges } from "./semantics";
 import { acceptsEncoding, negotiateImage } from "./negotiation";
 import { ACCEPT_QUERY, boundedBody, digestBytes, digestField, matchDigestField, preferMinimal, problem, type DigestAlgorithm } from "./protocol";
+import { additionalImageSamples, bmpSample } from "./images";
+import { generateUuid, parseUuidVersion } from "./uuid";
 
 export const app = new Hono();
+
+app.use("*", async (c, next) => {
+  await next();
+  c.res.headers.set("cache-control", "no-store");
+  c.res.headers.set("cdn-cache-control", "no-store");
+  c.res.headers.set("cloudflare-cdn-cache-control", "no-store");
+});
 
 function allowedMethods(path: string): string[] {
   const allowed = new Set<string>(["OPTIONS"]);
@@ -261,7 +270,20 @@ app.get("/cookies/delete", (c) => {
   return result;
 });
 
-app.get("/uuid", () => json({ uuid: crypto.randomUUID() }));
+async function uuidResponse(versionValue: string | undefined, namespace: string | undefined, name: string | undefined): Promise<Response> {
+  const version = parseUuidVersion(versionValue);
+  if (version === null) return error("Supported UUID versions: 1, 3, 4, 5, 6, 7, 8.");
+  if ((version === 3 || version === 5) && (namespace === undefined || name === undefined)) {
+    return error("UUID versions 3 and 5 require namespace and name query parameters.");
+  }
+  if (version === 8 && (namespace === undefined) !== (name === undefined)) {
+    return error("UUID version 8 requires both namespace and name for deterministic output.");
+  }
+  try { return json({ uuid: await generateUuid(version, namespace, name) }); }
+  catch (cause) { return error(cause instanceof Error ? cause.message : "Invalid UUID parameters."); }
+}
+app.get("/uuid", (c) => uuidResponse(c.req.query("version"), c.req.query("namespace"), c.req.query("name")));
+app.get("/uuid/:version", (c) => uuidResponse(c.req.param("version"), c.req.query("namespace"), c.req.query("name")));
 app.get("/bytes/:n", (c) => {
   const count = intParam(c.req.param("n"), MAX_BYTES);
   if (count === null) return error("Invalid byte count.");
@@ -373,7 +395,7 @@ app.on(["GET", "HEAD"], "/range/:n", (c) => {
 
 app.on(["GET", "HEAD"], "/cache", (c) => {
   const etag = '"http-cache-v1"';
-  const headers = new Headers({ etag, "last-modified": LAST_MODIFIED, "cache-control": "public, max-age=0" });
+  const headers = new Headers({ etag, "last-modified": LAST_MODIFIED, "cache-control": "no-store" });
   const conditional = preconditionStatus(c.req.raw, etag, LAST_MODIFIED);
   if (conditional !== null) return new Response(null, { status: conditional, headers });
   const response = json({ resource: "cache", version: 1 }, 200, headers);
@@ -383,7 +405,7 @@ app.on(["GET", "HEAD"], "/cache", (c) => {
 app.get("/cache/:n", (c) => {
   const n = intParam(c.req.param("n"), 31536000);
   if (n === null) return error("Invalid cache lifetime.");
-  return json({ resource: "cache", maxAge: n }, 200, { "cache-control": "public, max-age=" + n });
+  return json({ resource: "cache", maxAge: n });
 });
 
 app.on(["GET", "HEAD"], "/etag/:etag", (c) => {
@@ -431,11 +453,18 @@ const samples: Record<string, string> = {
 };
 function imageResponse(kind: string): Response {
   if (kind === "svg") {
-    return new Response('<svg xmlns="http://www.w3.org/2000/svg" width="180" height="120" viewBox="0 0 180 120"><rect width="180" height="120" fill="#295dd9"/><circle cx="90" cy="60" r="28" fill="#fff"/></svg>', { headers: { "content-type": "image/svg+xml", "x-content-type-options": "nosniff", "cache-control": "public, max-age=3600" } });
+    return new Response('<svg xmlns="http://www.w3.org/2000/svg" width="180" height="120" viewBox="0 0 180 120"><rect width="180" height="120" fill="#295dd9"/><circle cx="90" cy="60" r="28" fill="#fff"/></svg>', { headers: { "content-type": "image/svg+xml", "x-content-type-options": "nosniff" } });
   }
-  if (!(kind in samples)) return error("Unsupported image format.", 404);
-  const data = atob(samples[kind]);
-  return new Response(Uint8Array.from(data, (byte) => byte.charCodeAt(0)), { headers: { "content-type": "image/" + kind, "x-content-type-options": "nosniff", "cache-control": "public, max-age=3600" } });
+  const format = kind === "jpg" ? "jpeg" : kind;
+  if (format === "bmp") {
+    return new Response(bmpSample(), { headers: { "content-type": "image/bmp", "x-content-type-options": "nosniff" } });
+  }
+  const sample = Object.hasOwn(samples, format) ? samples[format] :
+    Object.hasOwn(additionalImageSamples, format) ? additionalImageSamples[format as keyof typeof additionalImageSamples] : null;
+  if (!sample) return error("Unsupported image format.", 404);
+  const data = atob(sample);
+  const type = format === "ico" ? "image/x-icon" : "image/" + format;
+  return new Response(Uint8Array.from(data, (byte) => byte.charCodeAt(0)), { headers: { "content-type": type, "x-content-type-options": "nosniff" } });
 }
 app.get("/image", (c) => {
   const format = negotiateImage(c.req.header("accept") ?? null);

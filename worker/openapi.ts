@@ -26,6 +26,7 @@ function operation(endpoint: Endpoint, method: string): Record<string, unknown> 
     (endpoint.method === "ANY" || endpoint.method === method.toUpperCase());
   const media = endpoint.path === "/image" ? {
     "image/png": binary, "image/jpeg": binary, "image/webp": binary, "image/svg+xml": { schema: { type: "string" } },
+    "image/gif": binary, "image/avif": binary, "image/bmp": binary, "image/x-icon": binary,
   } : successContent;
   return {
     tags: [endpoint.group],

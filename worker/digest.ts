@@ -1,7 +1,7 @@
 import { encoder, error, json } from "./http";
 
-export function md5Hex(input: string): string {
-  const bytes = encoder.encode(input);
+export function md5Hex(input: string | Uint8Array): string {
+  const bytes = typeof input === "string" ? encoder.encode(input) : input;
   const paddedLength = Math.ceil((bytes.length + 9) / 64) * 64;
   const padded = new Uint8Array(paddedLength);
   padded.set(bytes);

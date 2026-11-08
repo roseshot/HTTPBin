@@ -38,6 +38,7 @@
       "/cookies",
       "/cookies/*",
       "/uuid",
+      "/uuid/*",
       "/bytes/*",
       "/stream/*",
       "/stream-bytes/*",
