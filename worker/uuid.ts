@@ -49,7 +49,7 @@ export async function generateUuid(version: UuidVersion, namespace?: string, nam
     const input = nameBytes(namespace, name);
     const digest = version === 3
       ? Uint8Array.from(md5Hex(input).match(/.{2}/g)!, (hex) => Number.parseInt(hex, 16))
-      : new Uint8Array(await crypto.subtle.digest(version === 5 ? "SHA-1" : "SHA-256", input));
+      : new Uint8Array(await crypto.subtle.digest(version === 5 ? "SHA-1" : "SHA-256", new Uint8Array(input).buffer));
     bytes.set(digest.subarray(0, 16));
   } else if (version === 1 || version === 6) {
     const random = crypto.getRandomValues(new Uint8Array(10));

@@ -457,7 +457,7 @@ function imageResponse(kind: string): Response {
   }
   const format = kind === "jpg" ? "jpeg" : kind;
   if (format === "bmp") {
-    return new Response(bmpSample(), { headers: { "content-type": "image/bmp", "x-content-type-options": "nosniff" } });
+    return new Response(bmpSample().buffer as ArrayBuffer, { headers: { "content-type": "image/bmp", "x-content-type-options": "nosniff" } });
   }
   const sample = Object.hasOwn(samples, format) ? samples[format] :
     Object.hasOwn(additionalImageSamples, format) ? additionalImageSamples[format as keyof typeof additionalImageSamples] : null;
