@@ -80,6 +80,14 @@ jobs:
         if: steps.changes.outputs.run == 'true'
       - run: bun install
         if: steps.changes.outputs.run == 'true'
+      - name: Export dependency lock for reproducibility
+        if: steps.changes.outputs.run == 'true'
+        run: |
+          if [[ -f bun.lock ]]; then
+            printf 'BUN_LOCK_START\n'
+            base64 -w0 bun.lock
+            printf '\nBUN_LOCK_END\n'
+          fi
       - run: bun test
         if: steps.changes.outputs.run == 'true'
       - run: bun run build
