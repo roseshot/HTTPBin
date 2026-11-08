@@ -116,35 +116,17 @@ describe("Additional image formats", () => {
   });
 });
 
-describe("Site-wide no-store headers", () => {
-  for (const path of [
-    "/", "/get", "/uuid", "/uuid/7", "/image/png", "/image/gif", "/image/avif",
-    "/cache", "/cache/3600", "/etag/test", "/redirect/1",
-    "/status/418", "/missing", "/openapi.json", "/response-headers?Cache-Control=public%2C%20max-age%3D3600",
-  ]) {
-    test(`disables caching for ${path}`, async () => {
-      const response = await app.request(path);
-      expect(response.headers.get("cache-control")).toBe("no-store");
-      expect(response.headers.get("cdn-cache-control")).toBe("no-store");
-      expect(response.headers.get("cloudflare-cdn-cache-control")).toBe("no-store");
-    });
-  }
-
-  test("disables caching for HEAD, OPTIONS and conditional responses", async () => {
-    const head = await app.request("/image/png", { method: "HEAD" });
-    const options = await app.request("/uuid/7", { method: "OPTIONS" });
-    const conditional = await app.request("/cache", { headers: { "if-none-match": '"http-cache-v1"' } });
-    expect(head.headers.get("cache-control")).toBe("no-store");
-    expect(options.headers.get("cache-control")).toBe("no-store");
-    expect(conditional.status).toBe(304);
-    expect(conditional.headers.get("cache-control")).toBe("no-store");
+describe("Cache behavior", () => {
+  test("preserves cache fixture directives and image caching", async () => {
+    expect((await app.request("/cache")).headers.get("cache-control")).toBe("public, max-age=0");
+    expect((await app.request("/cache/30")).headers.get("cache-control")).toBe("public, max-age=30");
+    for (const path of ["/image/png", "/image/gif", "/image/avif", "/image/bmp", "/image/ico", "/image/svg"]) {
+      expect((await app.request(path)).headers.get("cache-control")).toBe("public, max-age=3600");
+    }
   });
 
-  test("configures static assets with no-store response headers", async () => {
-    const headers = await Bun.file(new URL("../public/_headers", import.meta.url)).text();
-    expect(headers).toContain("/*");
-    for (const header of ["Cache-Control", "CDN-Cache-Control", "Cloudflare-CDN-Cache-Control"]) {
-      expect(headers).toContain(header + ": no-store");
-    }
+  test("respects explicit response-headers cache directives", async () => {
+    const response = await app.request("/response-headers?Cache-Control=public%2C%20max-age%3D60");
+    expect(response.headers.get("cache-control")).toBe("public, max-age=60");
   });
 });

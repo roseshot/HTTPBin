@@ -133,6 +133,13 @@ a:hover { color: var(--blue); }
 .ui-button-icon { width: 33px; height: 33px; padding: 0; }
 .request-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; gap: 10px; }
 .request-actions .send { flex: 1; padding: 11px; font-size: 12px; }
+.copy-split { display: inline-flex; position: relative; flex: 0 0 auto; }
+.copy-split .copy-split-main { border-start-end-radius: 0; border-end-end-radius: 0; }
+.copy-split .copy-split-arrow { border-start-start-radius: 0; border-end-start-radius: 0; border-inline-start: 0; padding-inline: 7px; }
+.copy-split-arrow[aria-expanded="true"] { background: var(--panel-3); }
+.copy-menu { position: absolute; z-index: 20; top: calc(100% + 6px); inset-inline-start: 0; min-width: 182px; padding: 5px; background: var(--panel); border: 1px solid var(--border); border-radius: 9px; box-shadow: 0 12px 26px #0003; }
+.copy-menu-item { display: block; width: 100%; padding: 9px 10px; text-align: start; background: transparent; border: 0; border-radius: 6px; color: var(--text); font-size: 12px; white-space: nowrap; }
+.copy-menu-item:hover, .copy-menu-item:focus-visible { background: var(--panel-3); outline: none; }
 .request-tabs, .response-tabs { margin-top: 23px; }
 .tab-list { border-bottom: 1px solid var(--border); display: flex; gap: 18px; margin-bottom: 17px; overflow-x: auto; }
 .tab-trigger { border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); padding: 0 2px 11px; font-size: 12px; white-space: nowrap; }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   Activity, ArrowRight, Check, ChevronDown, ChevronRight, Clock3, Code2, Copy,
   FileJson2, Globe2, Info, Languages, Layers3, Moon, Play, Plus, RotateCw, Search,
@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { endpoints, groups, type Endpoint, type Method } from "../shared/endpoints";
 import { Button } from "./components/ui/button";
+import { formatRequest, requestTools, type RequestTool } from "./lib/request-snippets";
 import { useI18n } from "./i18n";
 import type { MessageKey } from "./i18n/schema";
 import StandardsPage from "./StandardsPage";
@@ -145,6 +146,10 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [toolMenuOpen, setToolMenuOpen] = useState(false);
+  const copyMenuRef = useRef<HTMLDivElement>(null);
+  const copyMenuItemsRef = useRef<HTMLDivElement>(null);
+  const copyMenuTriggerRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const controllerRef = useRef<AbortController | null>(null);
   const abortOnUnmount = useRef<AbortController | null>(null);
@@ -187,7 +192,39 @@ export default function App() {
     if (result?.imageUrl) URL.revokeObjectURL(result.imageUrl);
   }, [result?.imageUrl]);
 
+  useEffect(() => {
+    if (!toolMenuOpen) return;
+    copyMenuItemsRef.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus();
+    const outside = (event: PointerEvent) => {
+      if (!copyMenuRef.current?.contains(event.target as Node)) setToolMenuOpen(false);
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setToolMenuOpen(false);
+        copyMenuTriggerRef.current?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [toolMenuOpen]);
+
+  const navigateCopyMenu = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+    const items = Array.from(copyMenuItemsRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []);
+    if (!items.length) return;
+    event.preventDefault();
+    const current = items.indexOf(document.activeElement as HTMLButtonElement);
+    const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 :
+      event.key === "ArrowDown" ? (current + 1) % items.length : (current - 1 + items.length) % items.length;
+    items[next].focus();
+  };
+
   const selectEndpoint = (endpoint: Endpoint) => {
+    setToolMenuOpen(false);
     controllerRef.current?.abort();
     setSelected(endpoint);
     setPath(pathFor(endpoint));
@@ -301,17 +338,17 @@ export default function App() {
     }
   }, [makeRequest, method, followRedirect, formatNumber, t]);
 
-  const copyCurl = async () => {
+  const copyRequest = async (tool: RequestTool) => {
+    setToolMenuOpen(false);
     try {
       const request = makeRequest();
-      const quote = (value: string) => "'" + value.replace(/'/g, "'\\''") + "'";
-      const args = ["curl", "-i", "-X", method, quote(request.url.href)];
-      for (const [key, value] of request.requestHeaders) args.push("-H", quote(key + ": " + value));
-      if (typeof request.payload === "string") args.push("--data-raw", quote(request.payload));
-      else if (request.payload instanceof URLSearchParams) args.push("--data-raw", quote(request.payload.toString()));
-      else if (request.payload instanceof FormData) for (const [key, value] of request.payload) args.push("-F", quote(key + "=" + value));
-      if (followRedirect) args.push("-L");
-      await copy(args.join(" "));
+      await copy(formatRequest(tool, {
+        url: request.url,
+        method,
+        headers: request.requestHeaders,
+        payload: request.payload,
+        followRedirects: followRedirect,
+      }));
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
     } catch (error) { setErrorMessage(error instanceof Error ? error.message : t("errorCopy")); }
@@ -408,7 +445,13 @@ export default function App() {
           </TabsRoot>
           <label className="checkbox-row"><input type="checkbox" checked={followRedirect} onChange={(event) => setFollowRedirect(event.target.checked)} /> {t("followRedirects")}</label>
           <div className="request-actions">
-            <Button variant="secondary" size="small" onClick={copyCurl}>{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? t("copied") : t("copyCurl")}</Button>
+            <div className="copy-split" ref={copyMenuRef}>
+              <Button variant="secondary" size="small" className="copy-split-main" onClick={() => void copyRequest("curl")}>{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? t("copied") : t("copyCurl")}</Button>
+              <Button variant="secondary" size="small" className="copy-split-arrow" ref={copyMenuTriggerRef} aria-label={t("copyCurl") + " formats"} aria-haspopup="menu" aria-expanded={toolMenuOpen} onClick={() => setToolMenuOpen((open) => !open)}><ChevronDown size={14} aria-hidden="true" /></Button>
+              {toolMenuOpen && <div className="copy-menu" role="menu" ref={copyMenuItemsRef} aria-label={t("copyCurl")} onKeyDown={navigateCopyMenu}>
+                {requestTools.map((tool) => <button type="button" key={tool.id} role="menuitem" className="copy-menu-item" onClick={() => void copyRequest(tool.id)}>{tool.label}</button>)}
+              </div>}
+            </div>
             <Button variant="primary" className="send" disabled={loading} onClick={() => void sendRequest()}>{loading ? <RotateCw size={15} className="animate-spin" /> : <Play size={15} fill="currentColor" />}{loading ? t("sending") : t("send")}<ArrowRight size={15} /></Button>
             {loading && <Button variant="ghost" size="icon" aria-label={t("cancel")} onClick={() => controllerRef.current?.abort()}>×</Button>}
           </div>
