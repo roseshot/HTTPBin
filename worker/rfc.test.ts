@@ -30,13 +30,13 @@ describe("RFC 9110 method and representation semantics", () => {
     expect((await app.request("/bytes/0")).status).toBe(200);
   });
 
-  test("keeps cacheable fixtures invariant across request headers", async () => {
+  test("keeps cache fixtures invariant while preventing storage", async () => {
     const first = await app.request("/cache", { headers: { authorization: "Bearer one", "x-sample": "one" } });
     const second = await app.request("/cache", { headers: { authorization: "Bearer two", "x-sample": "two" } });
-    expect(first.headers.get("cache-control")).toBe("public, max-age=0");
+    expect(first.headers.get("cache-control")).toBe("no-store");
     expect(await first.text()).toBe(await second.text());
     const timed = await app.request("/cache/30", { headers: { authorization: "Bearer token" } });
-    expect(timed.headers.get("cache-control")).toBe("public, max-age=30");
+    expect(timed.headers.get("cache-control")).toBe("no-store");
     expect(await timed.json()).toEqual({ resource: "cache", maxAge: 30 });
     const etag = await app.request("/etag/demo", { headers: { authorization: "Bearer secret" } });
     expect((await etag.json() as { etag: string }).etag).toBe("demo");
