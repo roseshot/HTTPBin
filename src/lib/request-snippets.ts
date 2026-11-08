@@ -3,7 +3,7 @@ export const requestTools = [
   { id: "httpie", label: "HTTPie" },
   { id: "fetch", label: "JavaScript Fetch" },
   { id: "python", label: "Python Requests" },
-  { id: "pwsh", label: "PowerShell (pwsh)" },
+  { id: "pwsh", label: "PowerShell" },
 ] as const;
 
 export type RequestTool = typeof requestTools[number]["id"];

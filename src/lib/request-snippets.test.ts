@@ -15,7 +15,7 @@ function request(overrides: Partial<Parameters<typeof formatRequest>[1]> = {}) {
 describe("Request snippets", () => {
   test("offers cURL, HTTPie, JavaScript Fetch, Python Requests, and PowerShell", () => {
     expect(requestTools.map(({ id }) => id)).toEqual(["curl", "httpie", "fetch", "python", "pwsh"]);
-    expect(requestTools.find(({ id }) => id === "pwsh")?.label).toBe("PowerShell (pwsh)");
+    expect(requestTools.find(({ id }) => id === "pwsh")?.label).toBe("PowerShell");
   });
 
   test("escapes shell values and follows redirects in cURL", () => {
