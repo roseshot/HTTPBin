@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { formatRequest, requestTools } from "./request-snippets";
+import { formatRequest, loadRequestTool, REQUEST_TOOL_STORAGE_KEY, requestTools, saveRequestTool } from "./request-snippets";
 
 function request(overrides: Partial<Parameters<typeof formatRequest>[1]> = {}) {
   return {
@@ -16,6 +16,24 @@ describe("Request snippets", () => {
   test("offers cURL, HTTPie, JavaScript Fetch, Python Requests, and PowerShell", () => {
     expect(requestTools.map(({ id }) => id)).toEqual(["curl", "httpie", "fetch", "python", "pwsh"]);
     expect(requestTools.find(({ id }) => id === "pwsh")?.label).toBe("PowerShell");
+  });
+
+
+  test("restores the last selected tool across sessions", () => {
+    const entries = new Map<string, string>();
+    expect(loadRequestTool((key) => entries.get(key) ?? null)).toBe("curl");
+    for (const tool of requestTools) {
+      saveRequestTool(tool.id, (key, value) => { entries.set(key, value); });
+      expect(entries.get(REQUEST_TOOL_STORAGE_KEY)).toBe(tool.id);
+      expect(loadRequestTool((key) => entries.get(key) ?? null)).toBe(tool.id);
+    }
+  });
+
+  test("falls back to cURL for invalid or unavailable browser storage", () => {
+    expect(loadRequestTool(() => null)).toBe("curl");
+    expect(loadRequestTool(() => "not-supported")).toBe("curl");
+    expect(loadRequestTool(() => { throw new Error("Storage unavailable"); })).toBe("curl");
+    expect(() => saveRequestTool("pwsh", () => { throw new Error("Storage unavailable"); })).not.toThrow();
   });
 
   test("escapes shell values and follows redirects in cURL", () => {

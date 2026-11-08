@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { endpoints, groups, type Endpoint, type Method } from "../shared/endpoints";
 import { Button } from "./components/ui/button";
-import { formatRequest, requestTools, type RequestTool } from "./lib/request-snippets";
+import { formatRequest, loadRequestTool, requestTools, saveRequestTool, type RequestTool } from "./lib/request-snippets";
 import { useI18n } from "./i18n";
 import type { MessageKey } from "./i18n/schema";
 import StandardsPage from "./StandardsPage";
@@ -147,7 +147,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [toolMenuOpen, setToolMenuOpen] = useState(false);
-  const [selectedTool, setSelectedTool] = useState<RequestTool>("curl");
+  const [selectedTool, setSelectedTool] = useState<RequestTool>(() => loadRequestTool((key) => localStorage.getItem(key)));
   const copyMenuRef = useRef<HTMLDivElement>(null);
   const copyMenuItemsRef = useRef<HTMLDivElement>(null);
   const copyMenuTriggerRef = useRef<HTMLButtonElement>(null);
@@ -453,7 +453,7 @@ export default function App() {
               <Button variant="secondary" size="small" className="copy-split-main" onClick={() => void copyRequest(selectedTool)}>{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? t("copied") + " · " + selectedToolLabel : copyButtonLabel}</Button>
               <Button variant="secondary" size="small" className="copy-split-arrow" ref={copyMenuTriggerRef} aria-label={copyButtonLabel + " formats"} aria-haspopup="menu" aria-expanded={toolMenuOpen} onClick={() => setToolMenuOpen((open) => !open)}><ChevronDown size={14} aria-hidden="true" /></Button>
               {toolMenuOpen && <div className="copy-menu" role="menu" ref={copyMenuItemsRef} aria-label={copyButtonLabel} onKeyDown={navigateCopyMenu}>
-                {requestTools.map((tool) => <button type="button" key={tool.id} role="menuitem" aria-current={selectedTool === tool.id ? "true" : undefined} className="copy-menu-item" onClick={() => { setSelectedTool(tool.id); void copyRequest(tool.id); }}>{tool.label}</button>)}
+                {requestTools.map((tool) => <button type="button" key={tool.id} role="menuitem" aria-current={selectedTool === tool.id ? "true" : undefined} className="copy-menu-item" onClick={() => { setSelectedTool(tool.id); saveRequestTool(tool.id, (key, value) => localStorage.setItem(key, value)); void copyRequest(tool.id); }}>{tool.label}</button>)}
               </div>}
             </div>
             <Button variant="primary" className="send" disabled={loading} onClick={() => void sendRequest()}>{loading ? <RotateCw size={15} className="animate-spin" /> : <Play size={15} fill="currentColor" />}{loading ? t("sending") : t("send")}<ArrowRight size={15} /></Button>

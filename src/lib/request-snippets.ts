@@ -8,6 +8,25 @@ export const requestTools = [
 
 export type RequestTool = typeof requestTools[number]["id"];
 
+export const REQUEST_TOOL_STORAGE_KEY = "httpbin-copy-tool";
+
+export function loadRequestTool(read: (key: string) => string | null): RequestTool {
+  try {
+    const saved = read(REQUEST_TOOL_STORAGE_KEY);
+    return requestTools.find((tool) => tool.id === saved)?.id ?? "curl";
+  } catch {
+    return "curl";
+  }
+}
+
+export function saveRequestTool(tool: RequestTool, write: (key: string, value: string) => void): void {
+  try {
+    write(REQUEST_TOOL_STORAGE_KEY, tool);
+  } catch {
+    // Continue with the selected tool if browser storage is unavailable.
+  }
+}
+
 export type SnippetRequest = {
   url: URL;
   method: string;
