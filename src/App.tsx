@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Activity, ArrowRight, Check, ChevronDown, ChevronRight, Clock3, Code2, Copy,
   FileJson2, Globe2, Info, Languages, Layers3, Moon, Play, Plus, RotateCw, Search,
@@ -6,7 +6,11 @@ import {
 } from "lucide-react";
 import { endpoints, groups, type Endpoint, type Method } from "../shared/endpoints";
 import { Button } from "./components/ui/button";
-import { formatRequest, loadRequestTool, requestTools, saveRequestTool, type RequestTool } from "./lib/request-snippets";
+import { RequestActions } from "./features/playground/RequestActions";
+import { RequestEditor } from "./features/playground/RequestEditor";
+import { ResponseViewer } from "./features/playground/ResponseViewer";
+import { useRequest } from "./features/playground/useRequest";
+import { pair, type BodyMode, type Pair, type RequestTab, type ResponseTab, type AuthType } from "./features/playground/types";
 import { useI18n } from "./i18n";
 import type { MessageKey } from "./i18n/schema";
 import StandardsPage from "./StandardsPage";
@@ -40,66 +44,12 @@ function savedTheme(): Theme | null {
   }
 }
 
-type Pair = { id: number; key: string; value: string };
-type RequestTab = "params" | "headers" | "body" | "auth";
-type ResponseTab = "body" | "headers" | "timeline";
-type BodyMode = "json" | "text" | "form" | "multipart" | "binary" | "none";
-type Timeline = { time: number; label: string };
-type Result = {
-  status: number;
-  statusText: string;
-  elapsed: number;
-  headers: [string, string][];
-  text: string;
-  bytes: number;
-  contentType: string;
-  imageUrl?: string;
-  finalUrl: string;
-  redirected: boolean;
-  chunks: number;
-  timeline: Timeline[];
-  warning?: string;
-};
-let nextPairId = 0;
-function pair(key = "", value = ""): Pair { return { id: ++nextPairId, key, value }; }
 function pathFor(endpoint: Endpoint): string {
   if (endpoint.example) return endpoint.example;
   return endpoint.path.replace(/\{([^}]+)\}/g, (_match, name: string) => endpoint.parameters?.find((item) => item.name === name)?.example || "1");
 }
-function pretty(text: string, contentType: string): string {
-  if (!contentType.includes("json")) return text;
-  try { return JSON.stringify(JSON.parse(text), null, 2); } catch { return text; }
-}
-function contentKind(contentType: string) {
-  if (contentType.includes("json")) return "JSON";
-  if (contentType.startsWith("image/")) return "IMAGE";
-  if (contentType.includes("text/") || contentType.includes("xml")) return "TEXT";
-  return "BINARY";
-}
-function copy(text: string): Promise<void> {
-  return navigator.clipboard.writeText(text);
-}
 function methodBadge(method: Method) {
   return <span className={"method method-" + method}>{method}</span>;
-}
-
-function KeyValueEditor({ rows, onChange, noun }: { rows: Pair[]; onChange: (rows: Pair[]) => void; noun: string }) {
-  const { t } = useI18n();
-  const update = (id: number, field: "key" | "value", value: string) =>
-    onChange(rows.map((row) => row.id === id ? { ...row, [field]: value } : row));
-  return (
-    <div>
-      <div className="editor-label">{t("addHint")}</div>
-      {rows.map((row) => (
-        <div className="field-row" key={row.id}>
-          <input className="field" aria-label={noun + " " + t("itemName")} placeholder={t("key")} value={row.key} onChange={(event) => update(row.id, "key", event.target.value)} />
-          <input className="field" aria-label={noun + " " + t("itemValue")} placeholder={t("value")} value={row.value} onChange={(event) => update(row.id, "value", event.target.value)} />
-          <Button size="icon" variant="ghost" aria-label={t("remove") + " " + noun.toLowerCase()} onClick={() => onChange(rows.filter((item) => item.id !== row.id))}><Trash2 size={14} /></Button>
-        </div>
-      ))}
-      <button className="add-row" onClick={() => onChange([...rows, pair()])}><Plus size={13} /> {t("add")} {noun.toLowerCase()}</button>
-    </div>
-  );
 }
 
 function ExampleBody({ endpoint }: { endpoint: Endpoint }) {
@@ -137,23 +87,16 @@ export default function App() {
   const [params, setParams] = useState<Pair[]>([]);
   const [headers, setHeaders] = useState<Pair[]>([]);
   const [formRows, setFormRows] = useState<Pair[]>([pair()]);
-  const [authType, setAuthType] = useState<"none" | "basic" | "bearer">("none");
+  const [authType, setAuthType] = useState<AuthType>("none");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [token, setToken] = useState("");
   const [followRedirect, setFollowRedirect] = useState(true);
-  const [result, setResult] = useState<Result | null>(null);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [toolMenuOpen, setToolMenuOpen] = useState(false);
-  const [selectedTool, setSelectedTool] = useState<RequestTool>(() => loadRequestTool((key) => localStorage.getItem(key)));
-  const copyMenuRef = useRef<HTMLDivElement>(null);
-  const copyMenuItemsRef = useRef<HTMLDivElement>(null);
-  const copyMenuTriggerRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
-  const controllerRef = useRef<AbortController | null>(null);
-  const abortOnUnmount = useRef<AbortController | null>(null);
+  const { result, errorMessage, loading, setErrorMessage, makeRequest, sendRequest, cancelRequest, resetRequest } = useRequest({
+    path, method, params, headers, authType, username, password, token, bodyMode, body, formRows, followRedirect,
+    onResponseStart: () => setResponseTab("body"),
+  });
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -181,7 +124,6 @@ export default function App() {
       // Continue with the in-memory theme when storage is unavailable.
     }
   };
-  useEffect(() => () => { abortOnUnmount.current?.abort(); }, []);
   useEffect(() => {
     function onKeydown(event: KeyboardEvent) {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") { event.preventDefault(); searchRef.current?.focus(); }
@@ -189,51 +131,14 @@ export default function App() {
     window.addEventListener("keydown", onKeydown);
     return () => window.removeEventListener("keydown", onKeydown);
   }, []);
-  useEffect(() => () => {
-    if (result?.imageUrl) URL.revokeObjectURL(result.imageUrl);
-  }, [result?.imageUrl]);
-
-  useEffect(() => {
-    if (!toolMenuOpen) return;
-    copyMenuItemsRef.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus();
-    const outside = (event: PointerEvent) => {
-      if (!copyMenuRef.current?.contains(event.target as Node)) setToolMenuOpen(false);
-    };
-    const escape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setToolMenuOpen(false);
-        copyMenuTriggerRef.current?.focus();
-      }
-    };
-    document.addEventListener("pointerdown", outside);
-    document.addEventListener("keydown", escape);
-    return () => {
-      document.removeEventListener("pointerdown", outside);
-      document.removeEventListener("keydown", escape);
-    };
-  }, [toolMenuOpen]);
-
-  const navigateCopyMenu = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
-    const items = Array.from(copyMenuItemsRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []);
-    if (!items.length) return;
-    event.preventDefault();
-    const current = items.indexOf(document.activeElement as HTMLButtonElement);
-    const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 :
-      event.key === "ArrowDown" ? (current + 1) % items.length : (current - 1 + items.length) % items.length;
-    items[next].focus();
-  };
 
   const selectEndpoint = (endpoint: Endpoint) => {
-    setToolMenuOpen(false);
-    controllerRef.current?.abort();
+    resetRequest();
     setSelected(endpoint);
     setPath(pathFor(endpoint));
     setMethod(endpoint.method === "ANY" ? "GET" : endpoint.method);
     setParams([]);
     setHeaders([]);
-    setResult(null);
-    setErrorMessage("");
     setAuthType("none");
     const url = new URL(window.location.href);
     url.searchParams.set("endpoint", endpoint.path);
@@ -249,114 +154,6 @@ export default function App() {
        groupTitle(endpoint.group).toLowerCase().includes(search.toLowerCase())
     )),
   })).filter((group) => group.items.length > 0);
-
-  const makeRequest = useCallback(() => {
-    if (!path.startsWith("/") || path.startsWith("//")) throw new Error(t("errorPath"));
-    const url = new URL(path, window.location.origin);
-    if (url.origin !== window.location.origin) throw new Error(t("errorCrossOrigin"));
-    for (const item of params) if (item.key.trim()) url.searchParams.append(item.key.trim(), item.value);
-    const requestHeaders = new Headers();
-    for (const item of headers) if (item.key.trim()) requestHeaders.set(item.key.trim(), item.value);
-    if (authType === "basic") requestHeaders.set("authorization", "Basic " + btoa(unescape(encodeURIComponent(username + ":" + password))));
-    if (authType === "bearer") requestHeaders.set("authorization", "Bearer " + token);
-    let payload: BodyInit | undefined;
-    if (method !== "GET" && method !== "HEAD" && method !== "OPTIONS" && bodyMode !== "none") {
-      if (bodyMode === "json") { requestHeaders.set("content-type", "application/json"); payload = body; }
-      else if (bodyMode === "text") { requestHeaders.set("content-type", "text/plain; charset=utf-8"); payload = body; }
-      else if (bodyMode === "binary") { requestHeaders.set("content-type", "application/octet-stream"); payload = body; }
-      else if (bodyMode === "form") {
-        const data = new URLSearchParams();
-        for (const item of formRows) if (item.key) data.append(item.key, item.value);
-        payload = data;
-        requestHeaders.set("content-type", "application/x-www-form-urlencoded");
-      } else if (bodyMode === "multipart") {
-        const data = new FormData();
-        for (const item of formRows) if (item.key) data.append(item.key, item.value);
-        payload = data;
-        requestHeaders.delete("content-type");
-      }
-    }
-    return { url, requestHeaders, payload };
-  }, [path, params, headers, authType, username, password, token, method, bodyMode, body, formRows, t]);
-
-  const sendRequest = useCallback(async () => {
-    setErrorMessage("");
-    let input: ReturnType<typeof makeRequest>;
-    try { input = makeRequest(); }
-    catch (error) { setErrorMessage(error instanceof Error ? error.message : t("errorRequest")); return; }
-    controllerRef.current?.abort();
-    const controller = new AbortController();
-    controllerRef.current = controller;
-    abortOnUnmount.current = controller;
-    setLoading(true);
-    setResult(null);
-    setResponseTab("body");
-    const start = performance.now();
-    try {
-      const response = await fetch(input.url, {
-        method, headers: input.requestHeaders, body: input.payload, redirect: followRedirect ? "follow" : "manual", signal: controller.signal,
-      });
-      const headersList = Array.from(response.headers.entries());
-      const type = response.headers.get("content-type") || "application/octet-stream";
-      let text = "";
-      let count = 0;
-      let size = 0;
-      const chunks: Uint8Array[] = [];
-      const timeline: Timeline[] = [{ time: Math.round(performance.now() - start), label: t("headersReceived") }];
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      if (reader) {
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          size += value.byteLength;
-          count++;
-          chunks.push(value);
-          if (!type.startsWith("image/") && size < 2 * 1024 * 1024) text += decoder.decode(value, { stream: true });
-          timeline.push({ time: Math.round(performance.now() - start), label: t("chunk") + " " + count + " · " + formatNumber(value.byteLength) + " " + t("bytes") });
-          if (!type.startsWith("image/")) {
-            setResult({ status: response.status, statusText: response.statusText, elapsed: Math.round(performance.now() - start), headers: headersList,
-              text, bytes: size, contentType: type, finalUrl: response.url, redirected: response.redirected, chunks: count, timeline: [...timeline] });
-          }
-        }
-        text += decoder.decode();
-      }
-      let imageUrl: string | undefined;
-      if (type.startsWith("image/") && chunks.length) {
-        const merged = new Uint8Array(size);
-        let index = 0;
-        for (const chunk of chunks) { merged.set(chunk, index); index += chunk.byteLength; }
-        imageUrl = URL.createObjectURL(new Blob([merged.buffer as ArrayBuffer], { type }));
-      }
-      const warning = response.type === "opaqueredirect" ? t("opaqueWarning") :
-        response.redirected ? t("redirectWarning") : undefined;
-      setResult({ status: response.status, statusText: response.statusText, elapsed: Math.round(performance.now() - start),
-        headers: headersList, text, bytes: size, contentType: type, imageUrl, finalUrl: response.url, redirected: response.redirected, chunks: count, timeline, warning });
-    } catch (error) {
-      if (!controller.signal.aborted) setErrorMessage(error instanceof Error ? error.message : t("errorFailed"));
-    } finally {
-      if (controllerRef.current === controller) { setLoading(false); controllerRef.current = null; }
-    }
-  }, [makeRequest, method, followRedirect, formatNumber, t]);
-
-  const copyRequest = async (tool: RequestTool) => {
-    setToolMenuOpen(false);
-    try {
-      const request = makeRequest();
-      await copy(formatRequest(tool, {
-        url: request.url,
-        method,
-        headers: request.requestHeaders,
-        payload: request.payload,
-        followRedirects: followRedirect,
-      }));
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
-    } catch (error) { setErrorMessage(error instanceof Error ? error.message : t("errorCopy")); }
-  };
-
-  const selectedToolLabel = requestTools.find((tool) => tool.id === selectedTool)?.label ?? "cURL";
-  const copyButtonLabel = t("copyCurl").replace("cURL", selectedToolLabel);
 
   const showStandards = window.location.pathname === "/standards";
 
@@ -417,70 +214,14 @@ export default function App() {
       <section className="playground" aria-label="HTTP Playground">
         <div className="playground-header"><div className="panel-title"><Activity size={17} style={{ color: "var(--blue)" }} /> {t("playground")}</div><span className="live-pill"><span className="live-dot" /> {t("live")}</span></div>
         <div className="playground-scroller">
-          <div className="caption"><Globe2 size={14} /> {t("request")}</div>
-          <div className="request-bar">
-            <select aria-label="HTTP method" value={method} onChange={(event) => setMethod(event.target.value as Method)}>{["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "QUERY"].map((value) => <option key={value}>{value}</option>)}</select>
-            <input aria-label="Request path" value={path} onChange={(event) => setPath(event.target.value)} spellCheck={false} />
-          </div>
-          <div className="help-text"><Globe2 size={12} /><code>{window.location.origin}</code><span>·</span><span>{t("sameOrigin")}</span></div>
-          <TabsRoot value={requestTab} onValueChange={(value) => setRequestTab(value as RequestTab)} className="request-tabs">
-            <TabsList className="tab-list">{(["params", "headers", "body", "auth"] as const).map((value) => <TabsTab className="tab-trigger" value={value} key={value}>{t(value === "params" ? "params" : value === "headers" ? "headers" : value === "body" ? "body" : "auth")}</TabsTab>)}</TabsList>
-            <TabsPanel value="params" className="tab-panel"><KeyValueEditor rows={params} onChange={setParams} noun={t("parameters")} /></TabsPanel>
-            <TabsPanel value="headers" className="tab-panel"><KeyValueEditor rows={headers} onChange={setHeaders} noun={t("headers")} /></TabsPanel>
-            <TabsPanel value="body" className="tab-panel">
-              <div className="editor-label">{t("contentType")}</div>
-              <select className="field" aria-label="Request body mode" value={bodyMode} onChange={(event) => setBodyMode(event.target.value as BodyMode)}>
-                <option value="json">{t("json")}</option><option value="text">{t("plainText")}</option><option value="form">{t("form")}</option><option value="multipart">{t("multipart")}</option><option value="binary">{t("binary")}</option><option value="none">{t("noBody")}</option>
-              </select>
-              {bodyMode === "form" || bodyMode === "multipart" ? <div style={{ marginTop: 13 }}><KeyValueEditor rows={formRows} onChange={setFormRows} noun={t("value")} /></div> :
-                bodyMode !== "none" ? <><div className="label">{t("payload")}</div><textarea spellCheck={false} aria-label="Request body" className="editor" value={body} onChange={(event) => setBody(event.target.value)} /></> :
-                <p className="result-hint">{t("noBodyMessage")}</p>}
-              {(method === "GET" || method === "HEAD" || method === "OPTIONS") && <p className="result-hint">{t("bodyGuard")}</p>}
-            </TabsPanel>
-            <TabsPanel value="auth" className="tab-panel">
-              <div className="editor-label">{t("authScheme")}</div>
-              <select className="field" value={authType} aria-label="Authorization type" onChange={(event) => setAuthType(event.target.value as "none" | "basic" | "bearer")}>
-                <option value="none">{t("noAuth")}</option><option value="basic">{t("basicAuth")}</option><option value="bearer">{t("bearerToken")}</option>
-              </select>
-              {authType === "basic" && <><label className="label" htmlFor="username">{t("username")}</label><input className="field" id="username" value={username} onChange={(event) => setUsername(event.target.value)} /><label className="label" htmlFor="password">{t("password")}</label><input className="field" type="password" id="password" value={password} onChange={(event) => setPassword(event.target.value)} /></>}
-              {authType === "bearer" && <><label className="label" htmlFor="token">{t("token")}</label><input className="field" type="password" id="token" value={token} onChange={(event) => setToken(event.target.value)} /></>}
-              <p className="result-hint">{t("credentialsHint")}</p>
-            </TabsPanel>
-          </TabsRoot>
-          <label className="checkbox-row"><input type="checkbox" checked={followRedirect} onChange={(event) => setFollowRedirect(event.target.checked)} /> {t("followRedirects")}</label>
-          <div className="request-actions">
-            <div className="copy-split" ref={copyMenuRef}>
-              <Button variant="secondary" size="small" className="copy-split-main" onClick={() => void copyRequest(selectedTool)}>{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? t("copied") + " · " + selectedToolLabel : copyButtonLabel}</Button>
-              <Button variant="secondary" size="small" className="copy-split-arrow" ref={copyMenuTriggerRef} aria-label={copyButtonLabel + " formats"} aria-haspopup="menu" aria-expanded={toolMenuOpen} onClick={() => setToolMenuOpen((open) => !open)}><ChevronDown size={14} aria-hidden="true" /></Button>
-              {toolMenuOpen && <div className="copy-menu" role="menu" ref={copyMenuItemsRef} aria-label={copyButtonLabel} onKeyDown={navigateCopyMenu}>
-                {requestTools.map((tool) => <button type="button" key={tool.id} role="menuitem" aria-current={selectedTool === tool.id ? "true" : undefined} className="copy-menu-item" onClick={() => { setSelectedTool(tool.id); saveRequestTool(tool.id, (key, value) => localStorage.setItem(key, value)); void copyRequest(tool.id); }}>{tool.label}</button>)}
-              </div>}
-            </div>
-            <Button variant="primary" className="send" disabled={loading} onClick={() => void sendRequest()}>{loading ? <RotateCw size={15} className="animate-spin" /> : <Play size={15} fill="currentColor" />}{loading ? t("sending") : t("send")}<ArrowRight size={15} /></Button>
-            {loading && <Button variant="ghost" size="icon" aria-label={t("cancel")} onClick={() => controllerRef.current?.abort()}>×</Button>}
-          </div>
-          {errorMessage && <p className="tooltip-error" role="alert">{errorMessage}</p>}
+          <RequestEditor method={method} setMethod={setMethod} path={path} setPath={setPath} requestTab={requestTab} setRequestTab={setRequestTab}
+            params={params} setParams={setParams} headers={headers} setHeaders={setHeaders} bodyMode={bodyMode} setBodyMode={setBodyMode}
+            body={body} setBody={setBody} formRows={formRows} setFormRows={setFormRows} authType={authType} setAuthType={setAuthType}
+            username={username} setUsername={setUsername} password={password} setPassword={setPassword} token={token} setToken={setToken} />
+          <RequestActions method={method} makeRequest={makeRequest} followRedirect={followRedirect} setFollowRedirect={setFollowRedirect} loading={loading}
+            onSend={() => void sendRequest()} onCancel={cancelRequest} errorMessage={errorMessage} onError={setErrorMessage} />
           <hr className="section-divider" />
-          <div className="response-summary"><div className="caption" style={{ margin: 0 }}><Code2 size={14} /> {t("response")}</div>
-            {result && <div className="response-meta"><span className={"response-code" + (result.status >= 400 || result.status === 0 ? " bad" : "")}>{result.status || "Opaque"}</span><span><Clock3 size={12} />{result.elapsed} ms</span><span>{formatNumber(result.bytes)} B</span></div>}
-          </div>
-          {result ? <TabsRoot value={responseTab} onValueChange={(value) => setResponseTab(value as ResponseTab)} className="response-tabs">
-            <TabsList className="tab-list"><TabsTab className="tab-trigger" value="body">{t("body")}</TabsTab><TabsTab className="tab-trigger" value="headers">{t("headers")} <span className="counter">{result.headers.length}</span></TabsTab><TabsTab className="tab-trigger" value="timeline">{t("timeline")} <span className="counter">{result.chunks}</span></TabsTab></TabsList>
-            <TabsPanel value="body" className="tab-panel">
-              <div className="editor-label">{t("format")}: <strong>{contentKind(result.contentType)}</strong> · {result.contentType}</div>
-              {result.imageUrl ? <img className="image-preview" src={result.imageUrl} alt={t("imagePreview")} /> :
-                contentKind(result.contentType) === "BINARY" ? <div className="empty-note">{t("binaryReceived")} ({formatNumber(result.bytes)} B)</div> :
-                <pre className="result-body">{pretty(result.text, result.contentType) || t("emptyBody")}</pre>}
-              {result.warning && <p className="result-hint">{result.warning}</p>}
-              {result.redirected && <p className="result-hint">{t("finalUrl")}: {result.finalUrl}</p>}
-            </TabsPanel>
-            <TabsPanel value="headers" className="tab-panel">
-              <div className="doc-table">{result.headers.length ? result.headers.map(([key, value]) => <div className="doc-row" key={key}><code>{key}</code><span style={{ overflowWrap: "anywhere", color: "var(--muted)", fontSize: 11, textAlign: "right" }}>{value}</span></div>) : <div className="doc-row">{t("noHeaders")}</div>}</div>
-            </TabsPanel>
-            <TabsPanel value="timeline" className="tab-panel"><div className="timeline">{result.timeline.map((event, index) => <div className="timeline-item" key={index}><strong>{event.time} ms</strong>{event.label}</div>)}</div></TabsPanel>
-          </TabsRoot> :
-            <div className="response-placeholder" style={{ marginTop: 18 }}><Send size={23} /><strong>{t("responsePlaceholder")}</strong><p>{t("responsePlaceholderHelp")}</p></div>}
-          <div className="footer-note"><ShieldCheck size={14} /> {t("footPlayground")}</div>
+          <ResponseViewer result={result} responseTab={responseTab} setResponseTab={setResponseTab} />
         </div>
       </section>
     </main>}

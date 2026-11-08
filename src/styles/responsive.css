@@ -1,0 +1,23 @@
+@media (max-width: 1350px) {
+  .workspace { grid-template-columns: 215px minmax(260px, 1fr) minmax(330px, 1.05fr); }
+  .docs { padding: 28px 28px 60px; }
+  .sidebar { padding-left: 8px; padding-right: 8px; }
+  .playground-scroller { padding: 19px; }
+}
+@media (max-width: 1020px) {
+  .workspace { grid-template-columns: 195px minmax(0, 1fr); }
+  .docs { display: none; }
+  .playground { border-left: 0; }
+  .topbar { padding: 0 18px; }
+}
+@media (max-width: 650px) {
+  .shell { height: auto; min-height: 100vh; overflow: visible; }
+  .workspace { display: flex; flex-direction: column; overflow: visible; }
+  .sidebar { max-height: 230px; flex: 0 0 auto; border-bottom: 1px solid var(--border); border-right: 0; }
+  .sidebar .nav-section { display: inline-block; width: 100%; }
+  .playground { min-height: 800px; }
+  .playground-scroller { overflow: visible; }
+  .product-label, .top-divider, .topbar .top-link span { display: none; }
+  .brand { font-size: 15px; }
+}
+
