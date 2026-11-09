@@ -77,9 +77,13 @@ export function openApi(origin: string) {
   const paths: Record<string, Record<string, unknown>> = {};
   for (const endpoint of endpoints) {
     paths[endpoint.path] ??= {};
-    for (const method of supportedMethods(endpoint)) paths[endpoint.path][method] = operation(endpoint, method);
+    const pathOperations = paths[endpoint.path];
+    if (!pathOperations) throw new Error("Failed to initialize OpenAPI path.");
+    for (const method of supportedMethods(endpoint)) pathOperations[method] = operation(endpoint, method);
   }
-  paths["/response-headers"].post = operation(endpoints.find((item) => item.path === "/response-headers")!, "post");
+  const responseHeaderPath = paths["/response-headers"];
+  const responseHeaderEndpoint = endpoints.find((item) => item.path === "/response-headers");
+  if (responseHeaderPath && responseHeaderEndpoint) responseHeaderPath.post = operation(responseHeaderEndpoint, "post");
   const query = paths["/query"]?.query as Record<string, unknown> | undefined;
   if (query) {
     query.requestBody = { required: true, content: { "application/json": { schema: {} } } };

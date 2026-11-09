@@ -41,7 +41,11 @@ function nameBytes(namespace: string, name: string): Uint8Array {
 }
 
 export function randomSubsecondTicks(
-  draw: () => number = () => crypto.getRandomValues(new Uint16Array(1))[0],
+  draw: () => number = () => {
+    const value = crypto.getRandomValues(new Uint16Array(1))[0];
+    if (value === undefined) throw new Error("Unable to generate random subticks.");
+    return value;
+  },
 ): number {
   let candidate: number;
   do {
@@ -75,13 +79,13 @@ export async function generateUuid(version: UuidVersion, namespace?: string, nam
       putInteger(bytes, 6, 2, ticks & 0x0fffn);
     }
     bytes.set(random, 8);
-    bytes[10] |= 1;
+    bytes[10] = (bytes[10] ?? 0) | 1;
   } else {
     crypto.getRandomValues(bytes);
     if (version === 7) putInteger(bytes, 0, 6, BigInt(Date.now()));
   }
 
-  bytes[6] = (bytes[6] & 0x0f) | (version << 4);
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  bytes[6] = ((bytes[6] ?? 0) & 0x0f) | (version << 4);
+  bytes[8] = ((bytes[8] ?? 0) & 0x3f) | 0x80;
   return formatUuid(bytes);
 }

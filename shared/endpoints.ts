@@ -9,8 +9,8 @@ export interface Endpoint {
   example?: string;
   parameters?: { name: string; in: "path" | "query" | "header"; description: string; required?: boolean; example?: string }[];
 }
-const q = (name: string, description: string, example?: string) => ({ name, in: "query" as const, description, example });
-const p = (name: string, description: string, example?: string) => ({ name, in: "path" as const, required: true, description, example });
+const q = (name: string, description: string, example?: string) => ({ name, in: "query" as const, description, ...(example === undefined ? {} : { example }) });
+const p = (name: string, description: string, example?: string) => ({ name, in: "path" as const, required: true, description, ...(example === undefined ? {} : { example }) });
 export const endpoints: Endpoint[] = [
   { method: "QUERY", path: "/query", group: "HTTP Methods", summary: "Safe, idempotent QUERY method", description: "RFC 10008 QUERY with a JSON request body and Accept-Query discovery. Requires Content-Type: application/json; the response is not cached.", example: "/query" },
   { method: "GET", path: "/digest/generate/{algorithm}", group: "Response Formats", summary: "Generate Content-Digest", description: "RFC 9530 SHA-256 or SHA-512 Content-Digest and Repr-Digest of a fixed response body.", example: "/digest/generate/sha-256", parameters: [p("algorithm", "sha-256 or sha-512", "sha-256")] },

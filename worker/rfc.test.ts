@@ -3,6 +3,13 @@ import app from "./index";
 import { acceptsEncoding, negotiateImage } from "./lib/negotiation";
 import { md5Hex } from "./lib/digest";
 
+function object(value: unknown): Record<string, unknown> {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("Expected a JSON object.");
+  }
+  return value as Record<string, unknown>;
+}
+
 describe("RFC 9110 method and representation semantics", () => {
   test("exposes resource-specific Allow headers", async () => {
     const post = await app.request("/post", { method: "OPTIONS" });
@@ -92,13 +99,13 @@ describe("RFC 9110 method and representation semantics", () => {
   });
 
   test("advertises HEAD, OPTIONS, and security schemes in OpenAPI", async () => {
-    const spec = await (await app.request("/openapi.json")).json() as any;
-    expect(spec.paths["/get"].head).toBeDefined();
-    expect(spec.paths["/get"].options).toBeDefined();
-    expect(spec.paths["/anything/{path}"].post).toBeDefined();
-    expect(spec.paths["/response-headers"].post).toBeDefined();
-    expect(spec.components.securitySchemes.digestAuth.scheme).toBe("digest");
-    const swagger = await (await app.request("/spec.json")).json() as any;
+    const spec = object(await (await app.request("/openapi.json")).json());
+    expect(object(object(spec.paths)["/get"]).head).toBeDefined();
+    expect(object(object(spec.paths)["/get"]).options).toBeDefined();
+    expect(object(object(spec.paths)["/anything/{path}"]).post).toBeDefined();
+    expect(object(object(spec.paths)["/response-headers"]).post).toBeDefined();
+    expect(object(object(object(spec.components).securitySchemes).digestAuth).scheme).toBe("digest");
+    const swagger = object(await (await app.request("/spec.json")).json());
     expect(swagger.swagger).toBe("2.0");
   });
 });

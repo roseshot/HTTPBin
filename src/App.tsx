@@ -67,7 +67,9 @@ export default function App() {
   const endpointDescription = (endpoint: Endpoint) => locale === "en" ? endpoint.description : t(groupKeys[endpoint.group].description);
   const initial = (() => {
     const selected = new URLSearchParams(window.location.search).get("endpoint");
-    return endpoints.find((endpoint) => endpoint.path === selected) || endpoints[0];
+    const fallback = endpoints[0];
+    if (!fallback) throw new Error("Endpoint catalog must not be empty.");
+    return endpoints.find((endpoint) => endpoint.path === selected) ?? fallback;
   })();
   const [selected, setSelected] = useState<Endpoint>(initial);
   const [search, setSearch] = useState("");

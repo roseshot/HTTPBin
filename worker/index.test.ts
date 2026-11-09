@@ -2,30 +2,37 @@ import { describe, expect, test } from "bun:test";
 import app from "./index";
 import { md5Hex } from "./lib/digest";
 
+function object(value: unknown): Record<string, unknown> {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("Expected a JSON object.");
+  }
+  return value as Record<string, unknown>;
+}
+
 describe("HTTP request inspection", () => {
   test("echoes GET query parameters and headers", async () => {
     const response = await app.request("/get?name=alice&name=bob", { headers: { "user-agent": "httpbin-test" } });
-    const data = await response.json() as Record<string, any>;
+    const data = object(await response.json());
     expect(response.status).toBe(200);
-    expect(data.args.name).toEqual(["alice", "bob"]);
-    expect(data.headers["User-Agent"]).toBe("httpbin-test");
+    expect(object(data.args).name).toEqual(["alice", "bob"]);
+    expect(object(data.headers)["User-Agent"]).toBe("httpbin-test");
     expect(data.json).toBeNull();
   });
   test("echoes JSON POST bodies", async () => {
     const response = await app.request("/post", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ hello: "world" }) });
-    const data = await response.json() as Record<string, any>;
+    const data = object(await response.json());
     expect(data.json).toEqual({ hello: "world" });
     expect(data.data).toBe('{"hello":"world"}');
   });
   test("echoes URL-encoded forms", async () => {
     const response = await app.request("/post", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: "name=alice&name=bob" });
-    const data = await response.json() as Record<string, any>;
-    expect(data.form.name).toEqual(["alice", "bob"]);
+    const data = object(await response.json());
+    expect(object(data.form).name).toEqual(["alice", "bob"]);
   });
   test("accepts arbitrary methods and paths", async () => {
     const response = await app.request("/anything/example", { method: "PATCH", headers: { "content-type": "text/plain" }, body: "hello" });
     expect(response.status).toBe(200);
-    expect((await response.json() as any).data).toBe("hello");
+    expect(object(await response.json()).data).toBe("hello");
   });
   test("rejects oversized requests", async () => {
     const response = await app.request("/post", { method: "POST", body: "a".repeat(1024 * 1024 + 1) });
@@ -51,12 +58,12 @@ describe("HTTP response behavior", () => {
     const authorization = 'Digest username="demo", realm="' + realm + '", nonce="' + nonce + '", uri="' + uri + '", qop=auth, nc=' + nc + ', cnonce="' + cnonce + '", response="' + response + '"';
     const authenticated = await app.request(uri, { headers: { authorization } });
     expect(authenticated.status).toBe(200);
-    expect((await authenticated.json() as any).authenticated).toBe(true);
+    expect(object(await authenticated.json()).authenticated).toBe(true);
   });
   test("implements basic and bearer authentication", async () => {
     expect((await app.request("/basic-auth/demo/secret")).status).toBe(401);
     const basic = await app.request("/basic-auth/demo/secret", { headers: { authorization: "Basic " + btoa("demo:secret") } });
-    expect((await basic.json() as any).authenticated).toBe(true);
+    expect(object(await basic.json()).authenticated).toBe(true);
     expect((await app.request("/hidden-basic-auth/demo/secret")).status).toBe(404);
     expect((await app.request("/bearer", { headers: { authorization: "Bearer token123" } })).status).toBe(200);
   });
@@ -72,7 +79,7 @@ describe("HTTP response behavior", () => {
     const set = await app.request("/cookies/set?foo=bar");
     expect(set.headers.get("set-cookie")).toContain("foo=bar");
     const view = await app.request("/cookies", { headers: { cookie: "foo=bar" } });
-    expect((await view.json() as any).cookies.foo).toBe("bar");
+    expect(object(object(await view.json()).cookies).foo).toBe("bar");
     const remove = await app.request("/cookies/delete?foo");
     expect(remove.headers.get("set-cookie")).toContain("Max-Age=0");
   });
@@ -97,18 +104,18 @@ describe("HTTP response behavior", () => {
   });
   test("generates random bytes and a UUID", async () => {
     expect((await (await app.request("/bytes/16")).arrayBuffer()).byteLength).toBe(16);
-    expect((await (await app.request("/uuid")).json() as any).uuid).toMatch(/^[0-9a-f-]{36}$/);
+    expect(object(await (await app.request("/uuid")).json()).uuid).toMatch(/^[0-9a-f-]{36}$/);
   });
   test("streams newline-delimited JSON", async () => {
     const response = await app.request("/stream/3");
-    const lines = (await response.text()).trim().split("\n").map((line) => JSON.parse(line));
+    const lines = (await response.text()).trim().split("\n").map((line) => object(JSON.parse(line)));
     expect(lines.map((line) => line.id)).toEqual([0, 1, 2]);
   });
   test("returns OpenAPI and Swagger specifications", async () => {
-    const openapi = await (await app.request("/openapi.json")).json() as any;
-    const swagger = await (await app.request("/spec.json")).json() as any;
+    const openapi = object(await (await app.request("/openapi.json")).json());
+    const swagger = object(await (await app.request("/spec.json")).json());
     expect(openapi.openapi).toBe("3.2.1");
-    expect(openapi.paths["/get"].get).toBeDefined();
+    expect(object(object(openapi.paths)["/get"]).get).toBeDefined();
     expect(swagger.swagger).toBe("2.0");
   });
 });

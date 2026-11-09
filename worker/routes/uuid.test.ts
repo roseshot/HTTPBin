@@ -8,12 +8,17 @@ describe("UUID versions", () => {
   test("samples unbiased timestamp subticks with rejection", () => {
     const candidates = [65535, 60000, 59999];
     let draws = 0;
-    expect(randomSubsecondTicks(() => candidates[draws++])).toBe(9999);
+    expect(randomSubsecondTicks(() => {
+      const candidate = candidates[draws++];
+      if (candidate === undefined) throw new Error("No test candidate.");
+      return candidate;
+    })).toBe(9999);
     expect(draws).toBe(3);
 
     const counts = new Uint8Array(10000);
     for (let sample = 0; sample < 60000; sample++) {
-      counts[randomSubsecondTicks(() => sample)]++;
+      const index = randomSubsecondTicks(() => sample);
+      counts[index] = (counts[index] ?? 0) + 1;
     }
     expect(counts.every((count) => count === 6)).toBe(true);
   });

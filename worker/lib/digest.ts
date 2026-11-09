@@ -27,11 +27,14 @@ export function md5Hex(input: string | Uint8Array): string {
       else if (i < 32) { f = (d & b) | (~d & c); g = (5 * i + 1) % 16; }
       else if (i < 48) { f = b ^ c ^ d; g = (3 * i + 5) % 16; }
       else { f = c ^ (b | ~d); g = (7 * i) % 16; }
-      const value = (a + f + constants[i] + words.getUint32(g * 4, true)) | 0;
+      const constant = constants[i];
+      const shift = rotation[i];
+      if (constant === undefined || shift === undefined) throw new Error("Invalid MD5 round.");
+      const value = (a + f + constant + words.getUint32(g * 4, true)) | 0;
       a = d;
       d = c;
       c = b;
-      b = (b + ((value << rotation[i]) | (value >>> (32 - rotation[i])))) | 0;
+      b = (b + ((value << shift) | (value >>> (32 - shift)))) | 0;
     }
     a0 = (a0 + a) | 0;
     b0 = (b0 + b) | 0;
@@ -53,7 +56,11 @@ function parseDigest(header: string): Record<string, string> {
   if (!/^Digest\s+/i.test(header)) return {};
   const values: Record<string, string> = Object.create(null);
   const pattern = /([a-zA-Z0-9_-]+)\s*=\s*(?:"([^"]*)"|([^,\s]+))/g;
-  for (const match of header.slice(7).matchAll(pattern)) values[match[1].toLowerCase()] = match[2] ?? match[3];
+  for (const match of header.slice(7).matchAll(pattern)) {
+    const key = match[1];
+    const value = match[2] ?? match[3];
+    if (key && value !== undefined) values[key.toLowerCase()] = value;
+  }
   return values;
 }
 
@@ -84,6 +91,7 @@ export async function digestAuth(request: Request, qop: string, username: string
   if (fields.username !== username || fields.realm !== realm ||
       fields.uri !== uri || fields.qop !== qop ||
       (fields.algorithm && fields.algorithm.toUpperCase() !== algorithm) ||
+      !fields.nonce || !fields.nc || !fields.response ||
       !fields.cnonce || !/^[0-9a-fA-F]{8}$/.test(fields.nc || "") ||
       !/^[a-fA-F0-9]+$/.test(fields.response || "")) {
     return challenge(qop, algorithm);

@@ -6,7 +6,7 @@ function parseWeights(header: string): Range[] {
     const q = parameters.find((parameter) => /^\s*q\s*=/i.test(parameter));
     const raw = q?.split("=")[1]?.trim();
     const quality = raw === undefined ? 1 : /^(?:0(?:\.\d{0,3})?|1(?:\.0{0,3})?)$/.test(raw) ? Number(raw) : 0;
-    return { value: value.toLowerCase(), quality, order };
+    return { value: (value ?? "").toLowerCase(), quality, order };
   }).filter((entry) => entry.value !== "");
 }
 

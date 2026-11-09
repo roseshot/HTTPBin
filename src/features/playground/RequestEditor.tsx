@@ -6,6 +6,15 @@ import { TabsList, TabsPanel, TabsRoot, TabsTab } from "../../components/ui/tabs
 import { useI18n } from "../../i18n";
 import { pair, type AuthType, type BodyMode, type Pair, type RequestTab } from "./types";
 
+const requestMethods = ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "QUERY"] as const satisfies readonly Method[];
+const requestTabs = ["params", "headers", "body", "auth"] as const satisfies readonly RequestTab[];
+const bodyModes = ["json", "text", "form", "multipart", "binary", "none"] as const satisfies readonly BodyMode[];
+const authTypes = ["none", "basic", "bearer"] as const satisfies readonly AuthType[];
+
+function isOption<T extends string>(options: readonly T[], value: string): value is T {
+  return options.some((option) => option === value);
+}
+
 function KeyValueEditor({ rows, onChange, noun }: { rows: Pair[]; onChange: (rows: Pair[]) => void; noun: string }) {
   const { t } = useI18n();
   const update = (id: number, field: "key" | "value", value: string) =>
@@ -58,17 +67,17 @@ export function RequestEditor({ method, setMethod, path, setPath, requestTab, se
     <>
           <div className="caption"><Globe2 size={14} /> {t("request")}</div>
           <div className="request-bar">
-            <select aria-label="HTTP method" value={method} onChange={(event) => setMethod(event.target.value as Method)}>{["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "QUERY"].map((value) => <option key={value}>{value}</option>)}</select>
+            <select aria-label="HTTP method" value={method} onChange={(event) => isOption(requestMethods, event.target.value) && setMethod(event.target.value)}>{requestMethods.map((value) => <option key={value}>{value}</option>)}</select>
             <input aria-label="Request path" value={path} onChange={(event) => setPath(event.target.value)} spellCheck={false} />
           </div>
           <div className="help-text"><Globe2 size={12} /><code>{window.location.origin}</code><span>·</span><span>{t("sameOrigin")}</span></div>
-          <TabsRoot value={requestTab} onValueChange={(value) => setRequestTab(value as RequestTab)} className="request-tabs">
+          <TabsRoot value={requestTab} onValueChange={(value) => isOption(requestTabs, value) && setRequestTab(value)} className="request-tabs">
             <TabsList className="tab-list">{(["params", "headers", "body", "auth"] as const).map((value) => <TabsTab className="tab-trigger" value={value} key={value}>{t(value === "params" ? "params" : value === "headers" ? "headers" : value === "body" ? "body" : "auth")}</TabsTab>)}</TabsList>
             <TabsPanel value="params" className="tab-panel"><KeyValueEditor rows={params} onChange={setParams} noun={t("parameters")} /></TabsPanel>
             <TabsPanel value="headers" className="tab-panel"><KeyValueEditor rows={headers} onChange={setHeaders} noun={t("headers")} /></TabsPanel>
             <TabsPanel value="body" className="tab-panel">
               <div className="editor-label">{t("contentType")}</div>
-              <select className="field" aria-label="Request body mode" value={bodyMode} onChange={(event) => setBodyMode(event.target.value as BodyMode)}>
+              <select className="field" aria-label="Request body mode" value={bodyMode} onChange={(event) => isOption(bodyModes, event.target.value) && setBodyMode(event.target.value)}>
                 <option value="json">{t("json")}</option><option value="text">{t("plainText")}</option><option value="form">{t("form")}</option><option value="multipart">{t("multipart")}</option><option value="binary">{t("binary")}</option><option value="none">{t("noBody")}</option>
               </select>
               {bodyMode === "form" || bodyMode === "multipart" ? <div style={{ marginTop: 13 }}><KeyValueEditor rows={formRows} onChange={setFormRows} noun={t("value")} /></div> :
@@ -78,7 +87,7 @@ export function RequestEditor({ method, setMethod, path, setPath, requestTab, se
             </TabsPanel>
             <TabsPanel value="auth" className="tab-panel">
               <div className="editor-label">{t("authScheme")}</div>
-              <select className="field" value={authType} aria-label="Authorization type" onChange={(event) => setAuthType(event.target.value as "none" | "basic" | "bearer")}>
+              <select className="field" value={authType} aria-label="Authorization type" onChange={(event) => isOption(authTypes, event.target.value) && setAuthType(event.target.value)}>
                 <option value="none">{t("noAuth")}</option><option value="basic">{t("basicAuth")}</option><option value="bearer">{t("bearerToken")}</option>
               </select>
               {authType === "basic" && <><label className="label" htmlFor="username">{t("username")}</label><input className="field" id="username" value={username} onChange={(event) => setUsername(event.target.value)} /><label className="label" htmlFor="password">{t("password")}</label><input className="field" type="password" id="password" value={password} onChange={(event) => setPassword(event.target.value)} /></>}

@@ -1,5 +1,5 @@
 import { ArrowRight, ExternalLink, Info, Layers3, ShieldCheck } from "lucide-react";
-import { coverageLabels, rfcUrl, standards, unsupportedCapabilities, type CoverageLevel } from "../shared/standards";
+import { rfcUrl, standards, unsupportedCapabilities, type CoverageLevel } from "../shared/standards";
 import { useI18n } from "./i18n";
 
 const levels: CoverageLevel[] = ["subset", "demonstration", "runtime"];

@@ -27,7 +27,8 @@ export function registerResponseRoutes(app: Hono): void {
     }
     const total = choices.reduce((sum, item) => sum + item.weight, 0);
     let pick = Math.random() * total;
-    const choice = choices.find((item) => (pick -= item.weight) < 0) || choices[choices.length - 1];
+    const choice = choices.find((item) => (pick -= item.weight) < 0) ?? choices.at(-1);
+    if (!choice) return error("Invalid status code or weight.");
     if (choice.status < 200) return error("Informational responses are not supported by the Workers Response API.", 501);
     const withoutBody = c.req.method === "HEAD" || [204, 205, 304].includes(choice.status);
     return new Response(withoutBody || choice.status < 400 ? null : "HTTP " + choice.status + "\n", { status: choice.status });

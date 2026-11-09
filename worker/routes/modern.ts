@@ -13,7 +13,7 @@ export function registerModernRoutes(app: Hono): void {
     if (contentType !== "application/json") return problem("Only application/json queries are supported.", 415, headers);
     const accept = c.req.header("accept");
     if (accept && !accept.split(",").some((part) => {
-      const [media, ...options] = part.trim().toLowerCase().split(";");
+      const [media = "", ...options] = part.trim().toLowerCase().split(";");
       const quality = options.find((option) => /^\s*q=/.test(option));
       const q = quality ? Number(quality.split("=")[1]) : 1;
       return (media.trim() === "application/json" || media.trim() === "application/*" || media.trim() === "*/*") && Number.isFinite(q) && q > 0 && q <= 1;

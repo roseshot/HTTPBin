@@ -27,7 +27,7 @@ export function ResponseViewer({ result, responseTab, setResponseTab }: Props) {
           <div className="response-summary"><div className="caption" style={{ margin: 0 }}><Code2 size={14} /> {t("response")}</div>
             {result && <div className="response-meta"><span className={"response-code" + (result.status >= 400 || result.status === 0 ? " bad" : "")}>{result.status || "Opaque"}</span><span><Clock3 size={12} />{result.elapsed} ms</span><span>{formatNumber(result.bytes)} B</span></div>}
           </div>
-          {result ? <TabsRoot value={responseTab} onValueChange={(value) => setResponseTab(value as ResponseTab)} className="response-tabs">
+          {result ? <TabsRoot value={responseTab} onValueChange={(value) => (value === "body" || value === "headers" || value === "timeline") && setResponseTab(value)} className="response-tabs">
             <TabsList className="tab-list"><TabsTab className="tab-trigger" value="body">{t("body")}</TabsTab><TabsTab className="tab-trigger" value="headers">{t("headers")} <span className="counter">{result.headers.length}</span></TabsTab><TabsTab className="tab-trigger" value="timeline">{t("timeline")} <span className="counter">{result.chunks}</span></TabsTab></TabsList>
             <TabsPanel value="body" className="tab-panel">
               <div className="editor-label">{t("format")}: <strong>{contentKind(result.contentType)}</strong> · {result.contentType}</div>

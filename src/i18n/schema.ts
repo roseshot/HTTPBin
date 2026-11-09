@@ -223,7 +223,7 @@ export function matchLocale(value: string | null | undefined): Locale | null {
   if (normalized === "zh" || normalized.startsWith("zh-hans") || normalized.startsWith("zh-sg")) return "zh-CN";
   if (normalized.startsWith("zh-hant") || normalized.startsWith("zh-hk") || normalized.startsWith("zh-mo")) return "zh-TW";
   if (normalized.startsWith("zh-")) return "zh-CN";
-  return locales.find(({ code }) => code.split("-")[0].toLowerCase() === normalized.split("-")[0])?.code ?? null;
+  return locales.find(({ code }) => code.split("-")[0].toLowerCase() === (normalized.split("-")[0] ?? ""))?.code ?? null;
 }
 
 export function resolveLocale(query: string | null, stored: string | null, browser: readonly string[]): Locale {

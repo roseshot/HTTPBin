@@ -126,7 +126,7 @@ describe("Request snippets", () => {
   });
 
   test("omits request bodies when none were configured", () => {
-    const input = request({ method: "GET", payload: undefined });
+    const input = request({ method: "GET" });
     expect(formatRequest("curl", input)).not.toContain("--data-raw");
     expect(formatRequest("fetch", input)).not.toContain("body:");
     expect(formatRequest("python", input)).not.toContain("data=");

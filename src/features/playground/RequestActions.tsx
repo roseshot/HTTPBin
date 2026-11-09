@@ -58,7 +58,7 @@ export function RequestActions({ method, makeRequest, followRedirect, setFollowR
     const current = items.indexOf(document.activeElement as HTMLButtonElement);
     const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 :
       event.key === "ArrowDown" ? (current + 1) % items.length : (current - 1 + items.length) % items.length;
-    items[next].focus();
+    items[next]?.focus();
   };
 
   const copyRequest = async (tool: RequestTool) => {
@@ -69,7 +69,7 @@ export function RequestActions({ method, makeRequest, followRedirect, setFollowR
         url: request.url,
         method,
         headers: request.requestHeaders,
-        payload: request.payload,
+        ...(request.payload === undefined ? {} : { payload: request.payload }),
         followRedirects: followRedirect,
       }));
       setCopied(true);

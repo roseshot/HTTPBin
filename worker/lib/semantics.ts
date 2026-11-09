@@ -89,6 +89,9 @@ export function selectByteRanges(header: string | null, length: number): Selecte
     parts.push({ start: range.start, end: range.end });
   }
   if (parts.length === 0) return { kind: "unsatisfiable" };
-  if (parts.length === 1) return { kind: "partial", ...parts[0] };
+  if (parts.length === 1) {
+    const part = parts[0];
+    if (part) return { kind: "partial", start: part.start, end: part.end };
+  }
   return { kind: "multipart", parts };
 }

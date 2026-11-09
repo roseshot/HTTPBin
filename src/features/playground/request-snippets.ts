@@ -51,7 +51,7 @@ function powerShellFields(entries: [string, string][]): string {
     grouped.set(name, values);
   }
   return "@{ " + Array.from(grouped, ([name, values]) =>
-    powerShellQuote(name) + " = " + (values.length === 1 ? powerShellQuote(values[0]) :
+    powerShellQuote(name) + " = " + (values.length === 1 ? powerShellQuote(values[0] ?? "") :
       "@(" + values.map(powerShellQuote).join(", ") + ")"),
   ).join("; ") + " }";
 }

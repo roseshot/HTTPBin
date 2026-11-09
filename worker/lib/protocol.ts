@@ -13,6 +13,7 @@ export function parseDigestDictionary(header: string): Map<string, Uint8Array> |
     const match = /^([a-z*][a-z0-9_.*-]*)=:([A-Za-z0-9+/]*={0,2}):/.exec(header.slice(pos));
     if (!match) return null;
     const [raw, key, encoded] = match;
+    if (raw === undefined || key === undefined || encoded === undefined) return null;
     if (result.has(key) || encoded.length % 4 === 1) return null;
     let bytes: Uint8Array;
     try {
@@ -48,8 +49,9 @@ export function matchDigestField(header: string, actual: Uint8Array, algorithm: 
   if (!map) return "invalid";
   const expected = map.get(algorithm);
   if (!expected || expected.length !== digestLengths[algorithm]) return "invalid";
+  if (actual.length !== expected.length) return "mismatch";
   let difference = 0;
-  for (let index = 0; index < expected.length; index++) difference |= expected[index] ^ actual[index];
+  for (let index = 0; index < expected.length; index++) difference |= (expected[index] ?? 0) ^ (actual[index] ?? 0);
   return difference === 0 ? "match" : "mismatch";
 }
 

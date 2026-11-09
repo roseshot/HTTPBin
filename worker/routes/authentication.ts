@@ -6,7 +6,7 @@ export function registerAuthenticationRoutes(app: Hono): void {
   function basic(request: Request, user: string, password: string, hidden: boolean): Response {
     const match = /^Basic\s+(\S+)$/i.exec(request.headers.get("authorization") || "");
     let valid = false;
-    if (match) {
+    if (match?.[1]) {
       try {
         const encoded = atob(match[1]);
         const bytes = Uint8Array.from(encoded, (char) => char.charCodeAt(0));

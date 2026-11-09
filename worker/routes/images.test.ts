@@ -22,7 +22,7 @@ describe("Additional image formats", () => {
       } else if (format === "avif") {
         expect(new TextDecoder().decode(bytes.subarray(4, 12))).toBe("ftypavif");
         const marker = new TextEncoder().encode("ispe");
-        const offset = bytes.findIndex((byte, index) => marker.every((value, i) => bytes[index + i] === value));
+        const offset = bytes.findIndex((_, index) => marker.every((value, i) => bytes[index + i] === value));
         expect(offset).toBeGreaterThan(0);
         expect(view.getUint32(offset + 8)).toBe(180);
         expect(view.getUint32(offset + 12)).toBe(120);
@@ -46,7 +46,7 @@ describe("Additional image formats", () => {
       ["image/bmp", "image/bmp"],
       ["image/x-icon", "image/x-icon"],
       ["image/vnd.microsoft.icon", "image/x-icon"],
-    ]) {
+    ] as const) {
       const response = await app.request("/image", { headers: { accept } });
       expect(response.status).toBe(200);
       expect(response.headers.get("content-type")).toBe(mime);

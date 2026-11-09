@@ -58,7 +58,7 @@ export function useRequest({ path, method, params, headers, authType, username, 
         requestHeaders.delete("content-type");
       }
     }
-    return { url, requestHeaders, payload };
+    return { url, requestHeaders, ...(payload === undefined ? {} : { payload }) };
   }, [path, params, headers, authType, username, password, token, method, bodyMode, body, formRows, t]);
 
   const sendRequest = useCallback(async () => {
@@ -76,7 +76,8 @@ export function useRequest({ path, method, params, headers, authType, username, 
     const start = performance.now();
     try {
       const response = await fetch(input.url, {
-        method, headers: input.requestHeaders, body: input.payload, redirect: followRedirect ? "follow" : "manual", signal: controller.signal,
+        method, headers: input.requestHeaders, ...(input.payload === undefined ? {} : { body: input.payload }),
+        redirect: followRedirect ? "follow" : "manual", signal: controller.signal,
       });
       const headersList = Array.from(response.headers.entries());
       const type = response.headers.get("content-type") || "application/octet-stream";
@@ -113,7 +114,8 @@ export function useRequest({ path, method, params, headers, authType, username, 
       const warning = response.type === "opaqueredirect" ? t("opaqueWarning") :
         response.redirected ? t("redirectWarning") : undefined;
       setResult({ status: response.status, statusText: response.statusText, elapsed: Math.round(performance.now() - start),
-        headers: headersList, text, bytes: size, contentType: type, imageUrl, finalUrl: response.url, redirected: response.redirected, chunks: count, timeline, warning });
+        headers: headersList, text, bytes: size, contentType: type, ...(imageUrl === undefined ? {} : { imageUrl }),
+        finalUrl: response.url, redirected: response.redirected, chunks: count, timeline, ...(warning === undefined ? {} : { warning }) });
     } catch (error) {
       if (!controller.signal.aborted) setErrorMessage(error instanceof Error ? error.message : t("errorFailed"));
     } finally {
