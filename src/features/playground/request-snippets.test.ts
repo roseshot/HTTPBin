@@ -1,12 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import { formatRequest, loadRequestTool, REQUEST_TOOL_STORAGE_KEY, requestTools, saveRequestTool } from "./request-snippets";
 
-function request(overrides: Partial<Parameters<typeof formatRequest>[1]> = {}) {
+function request(overrides: Partial<Parameters<typeof formatRequest>[1]> = {}): Parameters<typeof formatRequest>[1] {
+  const method = overrides.method ?? "POST";
   return {
     url: new URL("https://example.com/post?name=first&name=second"),
-    method: "POST",
+    method,
     headers: new Headers({ "content-type": "application/json", "x-demo": "O'Reilly" }),
-    payload: '{"message":"hello"}',
+    ...(method === "GET" || method === "HEAD" ? {} : { payload: '{"message":"hello"}' }),
     followRedirects: true,
     ...overrides,
   };
