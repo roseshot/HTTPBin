@@ -82,7 +82,7 @@ jobs:
         if: steps.changes.outputs.run == 'true'
       - run: bun run lint
         if: steps.changes.outputs.run == 'true'
-      - run: bun test --environment=happy-dom
+      - run: bun test
         if: steps.changes.outputs.run == 'true'
       - run: bun run build
         if: steps.changes.outputs.run == 'true'
