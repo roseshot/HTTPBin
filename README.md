@@ -34,6 +34,7 @@ curl -i -X POST 'http://localhost:5173/post' -H 'Content-Type: application/json'
 ## Development
 
 ```sh
+bun run lint
 bun run typecheck
 bun test
 bun run build
@@ -47,7 +48,7 @@ bun run build
 - `shared/` contains endpoint metadata and RFC coverage shared by the API and interface.
 - Tests live beside the corresponding modules or in `worker/` for API-level integration coverage.
 
-Dependencies are pinned in `bun.lock`. CI uses `bun install --frozen-lockfile` before tests and builds.
+Dependencies are pinned in `bun.lock`. CI uses `bun install --frozen-lockfile`, Oxlint, TypeScript 7.1 strict checks, Bun tests (including Happy DOM component interactions), and Vite builds.
 
 ## Deployment
 
