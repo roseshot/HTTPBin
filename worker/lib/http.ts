@@ -88,8 +88,8 @@ export async function inspect(request: Request): Promise<Response> {
       const values: Record<string, string | string[]> = {};
       const files: Record<string, string> = {};
       for (const [key, field] of form.entries()) {
-        const value: string | Blob = field;
-        if (typeof value !== "string") {
+        const value: unknown = field;
+        if (value instanceof Blob) {
           const content = new Uint8Array(await value.arrayBuffer());
           const mime = value.type || "application/octet-stream";
           if (/^text\//.test(mime) || /^(application\/(?:json|xml|javascript))$/.test(mime)) {
@@ -101,7 +101,8 @@ export async function inspect(request: Request): Promise<Response> {
             }
             files[key] = "data:" + mime + ";base64," + btoa(binary);
           }
-        } else if (!(key in values)) values[key] = value;
+        } else if (typeof value !== "string") continue;
+        else if (!(key in values)) values[key] = value;
         else if (Array.isArray(values[key])) (values[key] as string[]).push(value);
         else values[key] = [values[key] as string, value];
       }
