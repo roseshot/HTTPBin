@@ -31,6 +31,10 @@ function actions(onSend = () => {}, onCancel = () => {}, loading = false) {
 }
 
 beforeEach(() => {
+  if (typeof window === "undefined") throw new Error("DOM test environment is required.");
+  Object.defineProperty(globalThis, "localStorage", { configurable: true, value: window.localStorage });
+  Object.defineProperty(globalThis, "history", { configurable: true, value: window.history });
+  Object.defineProperty(globalThis, "location", { configurable: true, value: window.location });
   localStorage.clear();
   history.replaceState(null, "", "/");
 });
