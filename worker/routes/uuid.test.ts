@@ -1,10 +1,23 @@
 import { describe, expect, test } from "bun:test";
 import app from "../index";
-import { generateUuid } from "../lib/uuid";
+import { generateUuid, randomSubsecondTicks } from "../lib/uuid";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 describe("UUID versions", () => {
+  test("samples unbiased timestamp subticks with rejection", () => {
+    const candidates = [65535, 60000, 59999];
+    let draws = 0;
+    expect(randomSubsecondTicks(() => candidates[draws++])).toBe(9999);
+    expect(draws).toBe(3);
+
+    const counts = new Uint8Array(10000);
+    for (let sample = 0; sample < 60000; sample++) {
+      counts[randomSubsecondTicks(() => sample)]++;
+    }
+    expect(counts.every((count) => count === 6)).toBe(true);
+  });
+
   for (const version of [1, 3, 4, 5, 6, 7, 8]) {
     test(`serves RFC 9562 UUID version ${version}`, async () => {
       const suffix = version === 3 || version === 5 ? "?namespace=dns&name=python.org" : "";

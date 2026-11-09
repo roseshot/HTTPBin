@@ -40,6 +40,16 @@ function nameBytes(namespace: string, name: string): Uint8Array {
   return input;
 }
 
+export function randomSubsecondTicks(
+  draw: () => number = () => crypto.getRandomValues(new Uint16Array(1))[0],
+): number {
+  let candidate: number;
+  do {
+    candidate = draw();
+  } while (candidate >= 60000);
+  return candidate % 10000;
+}
+
 export async function generateUuid(version: UuidVersion, namespace?: string, name?: string): Promise<string> {
   if (version === 4) return crypto.randomUUID();
   const bytes = new Uint8Array(16);
@@ -52,9 +62,9 @@ export async function generateUuid(version: UuidVersion, namespace?: string, nam
       : new Uint8Array(await crypto.subtle.digest(version === 5 ? "SHA-1" : "SHA-256", new Uint8Array(input).buffer));
     bytes.set(digest.subarray(0, 16));
   } else if (version === 1 || version === 6) {
-    const random = crypto.getRandomValues(new Uint8Array(10));
+    const random = crypto.getRandomValues(new Uint8Array(8));
     const ticks = BigInt(Date.now()) * 10000n + 0x01b21dd213814000n +
-      BigInt(((random[0] << 8) | random[1]) % 10000);
+      BigInt(randomSubsecondTicks());
     if (version === 1) {
       putInteger(bytes, 0, 4, ticks & 0xffffffffn);
       putInteger(bytes, 4, 2, (ticks >> 32n) & 0xffffn);
@@ -64,7 +74,7 @@ export async function generateUuid(version: UuidVersion, namespace?: string, nam
       putInteger(bytes, 4, 2, (ticks >> 12n) & 0xffffn);
       putInteger(bytes, 6, 2, ticks & 0x0fffn);
     }
-    bytes.set(random.subarray(2), 8);
+    bytes.set(random, 8);
     bytes[10] |= 1;
   } else {
     crypto.getRandomValues(bytes);
