@@ -125,13 +125,20 @@ export function swagger(origin: string) {
     paths[path] = {};
     for (const [method, details] of Object.entries(methods)) {
       if (method === "query") continue; // Swagger 2.0 does not define a QUERY operation.
-      const entry = details as Record<string, any>;
+      const entry = details as {
+        tags?: string[];
+        summary?: string;
+        description?: string;
+        operationId?: string;
+        parameters?: { name: string; in: string; description?: string; required?: boolean }[];
+        responses: Record<string, { description: string }>;
+      };
       paths[path][method] = {
         tags: entry.tags,
         summary: entry.summary,
         description: entry.description,
         operationId: entry.operationId,
-        ...(entry.parameters ? { parameters: entry.parameters.map((param: any) => ({
+        ...(entry.parameters ? { parameters: entry.parameters.map((param) => ({
           name: param.name, in: param.in, description: param.description, required: param.required,
           type: "string",
         })) } : {}),

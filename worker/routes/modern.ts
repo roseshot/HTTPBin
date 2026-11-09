@@ -71,7 +71,7 @@ export function registerModernRoutes(app: Hono): void {
   // RFC 6266 and RFC 8187: UTF-8 filename in Content-Disposition.
   app.get("/download", (c) => {
     const filename = c.req.query("filename") || "sample.txt";
-    if (filename.length > 200 || /[\x00-\x1f\x7f\/\\]/.test(filename) || filename === "." || filename === "..") {
+    if (filename.length > 200 || [...filename].some((char) => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127 || char === "/" || char === "\\") || filename === "." || filename === "..") {
       return problem("Invalid download filename.", 400);
     }
     const fallback = filename.replace(/[^\x20-\x7e]/g, "_").replace(/[";]/g, "_");

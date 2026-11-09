@@ -3,6 +3,13 @@ import app from "./index";
 import { digestBytes, digestField, matchDigestField, parseDigestDictionary, preferMinimal } from "./lib/protocol";
 import { selectByteRanges } from "./lib/semantics";
 
+function object(value: unknown): Record<string, unknown> {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("Expected a JSON object.");
+  }
+  return value as Record<string, unknown>;
+}
+
 describe("RFC 9457 and RFC 9110 error semantics", () => {
   test("returns Problem Details with an HTTP-appropriate status", async () => {
     const response = await app.request("/bytes/not-an-integer");
@@ -125,13 +132,13 @@ describe("RFC 7240, 6266, 8187, 8288, 9651 and 9745 fixtures", () => {
   });
 
   test("publishes QUERY in OpenAPI 3.2 but not invalid Swagger 2.0 operations", async () => {
-    const spec = await (await app.request("/openapi.json")).json() as any;
+    const spec = object(await (await app.request("/openapi.json")).json());
     expect(spec.openapi).toBe("3.2.1");
-    expect(spec.paths["/query"].query).toBeDefined();
-    expect(spec.paths["/digest/verify"].post).toBeDefined();
-    expect(spec.paths["/digest/generate/{algorithm}"].get).toBeDefined();
-    const swagger = await (await app.request("/spec.json")).json() as any;
-    expect(swagger.paths["/query"].query).toBeUndefined();
+    expect(object(object(spec.paths)["/query"]).query).toBeDefined();
+    expect(object(object(spec.paths)["/digest/verify"]).post).toBeDefined();
+    expect(object(object(spec.paths)["/digest/generate/{algorithm}"]).get).toBeDefined();
+    const swagger = object(await (await app.request("/spec.json")).json());
+    expect(object(object(swagger.paths)["/query"]).query).toBeUndefined();
   });
 });
 

@@ -87,7 +87,7 @@ export function RequestActions({ method, makeRequest, followRedirect, setFollowR
             <div className="copy-split" ref={copyMenuRef}>
               <Button variant="secondary" size="small" className="copy-split-main" onClick={() => void copyRequest(selectedTool)}>{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? t("copied") + " · " + selectedToolLabel : copyButtonLabel}</Button>
               <Button variant="secondary" size="small" className="copy-split-arrow" ref={copyMenuTriggerRef} aria-label={copyButtonLabel + " formats"} aria-haspopup="menu" aria-expanded={toolMenuOpen} onClick={() => setToolMenuOpen((open) => !open)}><ChevronDown size={14} aria-hidden="true" /></Button>
-              {toolMenuOpen && <div className="copy-menu" role="menu" ref={copyMenuItemsRef} aria-label={copyButtonLabel} onKeyDown={navigateCopyMenu}>
+              {toolMenuOpen && <div className="copy-menu" role="menu" tabIndex={-1} ref={copyMenuItemsRef} aria-label={copyButtonLabel} onKeyDown={navigateCopyMenu}>
                 {requestTools.map((tool) => <button type="button" key={tool.id} role="menuitem" aria-current={selectedTool === tool.id ? "true" : undefined} className="copy-menu-item" onClick={() => { setSelectedTool(tool.id); saveRequestTool(tool.id, (key, value) => localStorage.setItem(key, value)); void copyRequest(tool.id); }}>{tool.label}</button>)}
               </div>}
             </div>

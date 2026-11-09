@@ -35,13 +35,13 @@ const Context = createContext<I18nContext | null>(null);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [locale, updateLocale] = useState<Locale>(initialLocale);
-  const [messages, setMessages] = useState<TranslationMap>(english);
-  const [ready, setReady] = useState(locale === DEFAULT_LOCALE);
+  const [loaded, setLoaded] = useState<{ locale: Locale; messages: TranslationMap }>({ locale: DEFAULT_LOCALE, messages: english });
+  const ready = locale === DEFAULT_LOCALE || loaded.locale === locale;
+  const messages = loaded.locale === locale ? loaded.messages : english;
 
   useEffect(() => {
     let active = true;
-    setReady(locale === DEFAULT_LOCALE);
-    void loadLocale(locale).then((next) => { if (active) { setMessages(next); setReady(true); } });
+    void loadLocale(locale).then((next) => { if (active) setLoaded({ locale, messages: next }); });
     document.documentElement.lang = locale;
     document.documentElement.dir = RTL_LOCALES.includes(locale) ? "rtl" : "ltr";
     return () => { active = false; };
