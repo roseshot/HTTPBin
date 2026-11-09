@@ -14,8 +14,6 @@
   },
   "rules": {
     "typescript/no-explicit-any": "error",
-    "react/react-in-jsx-scope": "off",
-    "react/prop-types": "off",
     "no-unsafe-optional-chaining": "error",
     "eqeqeq": "error"
   }

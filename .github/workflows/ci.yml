@@ -78,14 +78,8 @@ jobs:
         if: steps.changes.outputs.run == 'true'
       - uses: oven-sh/setup-bun@v2
         if: steps.changes.outputs.run == 'true'
-      - run: bun install
+      - run: bun install --frozen-lockfile
         if: steps.changes.outputs.run == 'true'
-      - name: Export updated lockfile
-        if: steps.changes.outputs.run == 'true'
-        run: |
-          printf 'LOCK_GENERATED_START\n'
-          base64 -w0 bun.lock
-          printf '\nLOCK_GENERATED_END\n'
       - run: bun run lint
         if: steps.changes.outputs.run == 'true'
       - run: bun test
