@@ -158,7 +158,7 @@ export default function App() {
 
   return <div className={"shell" + (showStandards ? " standards-shell" : "")}>
     <header className="topbar">
-      <a className="brand" href="/" aria-label="HTTPBin home"><span className="brand-icon"><Terminal size={20} strokeWidth={2.4} /></span><div>http<span>bin</span></div><span className="product-label">Workers Edition</span></a>
+      <a className="brand" href="/" aria-label="HTTPBin home"><span className="brand-icon"><Terminal size={20} strokeWidth={2.4} /></span><div>http<span>bin</span></div><span className="product-label">Runs on Cloudflare Workers</span></a>
       <nav className="topbar-right" aria-label="Site navigation">
         <a className="top-link" href={href("/docs")}><Layers3 size={15} /><span>{t("apiExplorer")}</span></a>
         <a className="top-link" href="/openapi.json" target="_blank" rel="noreferrer"><FileJson2 size={15} /><span>OpenAPI</span></a>
