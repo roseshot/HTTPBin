@@ -40,6 +40,7 @@ const messages = {
   "credentialsHint": "凭据仅在当前浏览器会话中使用，不会由调试台存储。",
   "followRedirects": "自动跟随重定向",
   "copyCurl": "复制 cURL",
+  "copyExchange": "复制请求与响应",
   "copied": "已复制",
   "send": "发送请求",
   "sending": "发送中...",

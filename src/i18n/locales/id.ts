@@ -40,6 +40,7 @@ const messages = {
   "credentialsHint": "Kredensial hanya digunakan selama sesi ini dan tidak disimpan oleh alat.",
   "followRedirects": "Ikuti pengalihan otomatis",
   "copyCurl": "Salin cURL",
+  "copyExchange": "Salin permintaan dan respons",
   "copied": "Disalin",
   "send": "Kirim permintaan",
   "sending": "Mengirim...",

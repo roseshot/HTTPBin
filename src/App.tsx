@@ -91,7 +91,7 @@ export default function App() {
   const [token, setToken] = useState(initialRequest.token);
   const [followRedirect, setFollowRedirect] = useState(true);
   const searchRef = useRef<HTMLInputElement>(null);
-  const { result, errorMessage, loading, setErrorMessage, makeRequest, sendRequest, cancelRequest, resetRequest } = useRequest({
+  const { result, sentRequest, errorMessage, loading, setErrorMessage, makeRequest, sendRequest, cancelRequest, resetRequest } = useRequest({
     path, method, params, headers, authType, username, password, token, bodyMode, body, formRows, followRedirect,
     onResponseStart: () => setResponseTab("body"),
   });
@@ -223,7 +223,7 @@ export default function App() {
             params={params} setParams={setParams} headers={headers} setHeaders={setHeaders} bodyMode={bodyMode} setBodyMode={setBodyMode}
             body={body} setBody={setBody} formRows={formRows} setFormRows={setFormRows} authType={authType} setAuthType={setAuthType}
             username={username} setUsername={setUsername} password={password} setPassword={setPassword} token={token} setToken={setToken} />
-          <RequestActions method={method} makeRequest={makeRequest} followRedirect={followRedirect} setFollowRedirect={setFollowRedirect} loading={loading}
+          <RequestActions method={method} sentRequest={sentRequest} result={result} makeRequest={makeRequest} followRedirect={followRedirect} setFollowRedirect={setFollowRedirect} loading={loading}
             onSend={() => void sendRequest()} onCancel={cancelRequest} errorMessage={errorMessage} onError={setErrorMessage} />
           <hr className="section-divider" />
           <ResponseViewer result={result} responseTab={responseTab} setResponseTab={setResponseTab} />

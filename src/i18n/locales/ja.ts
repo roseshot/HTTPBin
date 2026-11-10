@@ -40,6 +40,7 @@ const messages = {
   "credentialsHint": "認証情報はこのブラウザーセッション内でのみ使用され、保存されません。",
   "followRedirects": "リダイレクトを自動追跡",
   "copyCurl": "cURL をコピー",
+  "copyExchange": "リクエストとレスポンスをコピー",
   "copied": "コピーしました",
   "send": "リクエストを送信",
   "sending": "送信中...",

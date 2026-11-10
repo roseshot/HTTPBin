@@ -40,6 +40,7 @@ const messages = {
   "credentialsHint": "Kimlik bilgileri yalnızca bu oturumda kullanılır ve kaydedilmez.",
   "followRedirects": "Yönlendirmeleri otomatik izle",
   "copyCurl": "cURL kopyala",
+  "copyExchange": "İstek ve yanıtı kopyala",
   "copied": "Kopyalandı",
   "send": "İstek gönder",
   "sending": "Gönderiliyor...",

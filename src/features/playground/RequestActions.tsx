@@ -4,9 +4,13 @@ import type { Method } from "../../../shared/endpoints";
 import { Button } from "../../components/ui/button";
 import { useI18n } from "../../i18n";
 import { formatRequest, loadRequestTool, requestTools, saveRequestTool, type RequestTool } from "./request-snippets";
+import { formatExchange, type CapturedRequest } from "./request-exchange";
+import type { Result } from "./types";
 
 interface Props {
   method: Method;
+  sentRequest: CapturedRequest | null;
+  result: Result | null;
   makeRequest: () => { url: URL; requestHeaders: Headers; payload?: BodyInit };
   followRedirect: boolean;
   setFollowRedirect: (value: boolean) => void;
@@ -21,9 +25,10 @@ function copy(text: string): Promise<void> {
   return navigator.clipboard.writeText(text);
 }
 
-export function RequestActions({ method, makeRequest, followRedirect, setFollowRedirect, loading, onSend, onCancel, errorMessage, onError }: Props) {
+export function RequestActions({ method, sentRequest, result, makeRequest, followRedirect, setFollowRedirect, loading, onSend, onCancel, errorMessage, onError }: Props) {
   const { t } = useI18n();
   const [copied, setCopied] = useState(false);
+  const [exchangeCopied, setExchangeCopied] = useState(false);
   const [toolMenuOpen, setToolMenuOpen] = useState(false);
   const [selectedTool, setSelectedTool] = useState<RequestTool>(() => loadRequestTool((key) => localStorage.getItem(key)));
   const copyMenuRef = useRef<HTMLDivElement>(null);
@@ -77,6 +82,15 @@ export function RequestActions({ method, makeRequest, followRedirect, setFollowR
     } catch (error) { onError(error instanceof Error ? error.message : t("errorCopy")); }
   };
 
+  const copyBoth = async () => {
+    if (!sentRequest || !result) return;
+    try {
+      await copy(formatExchange(sentRequest, result));
+      setExchangeCopied(true);
+      window.setTimeout(() => setExchangeCopied(false), 1800);
+    } catch (error) { onError(error instanceof Error ? error.message : t("errorCopy")); }
+  };
+
   const selectedToolLabel = requestTools.find((tool) => tool.id === selectedTool)?.label ?? "cURL";
   const copyButtonLabel = t("copyCurl").replace("cURL", selectedToolLabel);
 
@@ -91,6 +105,7 @@ export function RequestActions({ method, makeRequest, followRedirect, setFollowR
                 {requestTools.map((tool) => <button type="button" key={tool.id} role="menuitem" aria-current={selectedTool === tool.id ? "true" : undefined} className="copy-menu-item" onClick={() => { setSelectedTool(tool.id); saveRequestTool(tool.id, (key, value) => localStorage.setItem(key, value)); void copyRequest(tool.id); }}>{tool.label}</button>)}
               </div>}
             </div>
+            <Button variant="secondary" size="small" className="copy-exchange" disabled={!sentRequest || !result || loading} onClick={() => void copyBoth()}>{exchangeCopied ? <Check size={14} /> : <Copy size={14} />}{exchangeCopied ? t("copied") : t("copyExchange")}</Button>
             <Button variant="primary" className="send" disabled={loading} onClick={onSend}>{loading ? <RotateCw size={15} className="animate-spin" /> : <Play size={15} fill="currentColor" />}{loading ? t("sending") : t("send")}<ArrowRight size={15} /></Button>
             {loading && <Button variant="ghost" size="icon" aria-label={t("cancel")} onClick={onCancel}>×</Button>}
           </div>

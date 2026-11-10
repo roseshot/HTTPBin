@@ -3,6 +3,7 @@ import type { Method } from "../../../shared/endpoints";
 import { useI18n } from "../../i18n";
 import type { AuthType, BodyMode, Pair, Result, Timeline } from "./types";
 import { isUnexpectedHtmlResponse } from "./response-content";
+import { captureRequest, type CapturedRequest } from "./request-exchange";
 
 interface RequestConfig {
   path: string;
@@ -23,6 +24,7 @@ interface RequestConfig {
 export function useRequest({ path, method, params, headers, authType, username, password, token, bodyMode, body, formRows, followRedirect, onResponseStart }: RequestConfig) {
   const { t, formatNumber } = useI18n();
   const [result, setResult] = useState<Result | null>(null);
+  const [sentRequest, setSentRequest] = useState<CapturedRequest | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const controllerRef = useRef<AbortController | null>(null);
@@ -73,6 +75,7 @@ export function useRequest({ path, method, params, headers, authType, username, 
     abortOnUnmount.current = controller;
     setLoading(true);
     setResult(null);
+    setSentRequest(captureRequest(input.url, method, input.requestHeaders, input.payload));
     onResponseStart();
     const start = performance.now();
     try {
@@ -131,8 +134,9 @@ export function useRequest({ path, method, params, headers, authType, username, 
   const resetRequest = () => {
     controllerRef.current?.abort();
     setResult(null);
+    setSentRequest(null);
     setErrorMessage("");
   };
 
-  return { result, errorMessage, loading, setErrorMessage, makeRequest, sendRequest, cancelRequest, resetRequest };
+  return { result, sentRequest, errorMessage, loading, setErrorMessage, makeRequest, sendRequest, cancelRequest, resetRequest };
 }

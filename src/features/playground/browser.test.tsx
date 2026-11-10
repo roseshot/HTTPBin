@@ -5,6 +5,7 @@ import { I18nProvider } from "../../i18n";
 import { RequestActions } from "./RequestActions";
 import { ResponseViewer } from "./ResponseViewer";
 import { REQUEST_TOOL_STORAGE_KEY } from "./request-snippets";
+import { captureRequest } from "./request-exchange";
 import type { ResponseTab, Result } from "./types";
 
 const makeRequest = () => ({
@@ -16,6 +17,8 @@ function actions(onSend = () => {}, onCancel = () => {}, loading = false) {
   return <I18nProvider>
     <RequestActions
       method="GET"
+      sentRequest={null}
+      result={null}
       makeRequest={makeRequest}
       followRedirect={true}
       setFollowRedirect={() => {}}
@@ -59,6 +62,49 @@ describe("Playground browser interactions", () => {
     fireEvent.click(screen.getByRole("button", { name: "Copy PowerShell" }));
     await waitFor(() => expect(copied).toHaveLength(2));
     expect(copied[1]).toContain("Invoke-WebRequest");
+  });
+
+  test("copies the sent request and response together without the host", async () => {
+    const copied: string[] = [];
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: async (value: string) => { copied.push(value); } },
+    });
+    const response: Result = {
+      status: 200, statusText: "OK", elapsed: 12,
+      headers: [["content-type", "application/json"]],
+      text: '{"url":"https://example.com/get","hello":"world"}',
+      bytes: 55, contentType: "application/json", finalUrl: "https://example.com/get",
+      redirected: false, chunks: 1, timeline: [],
+    };
+    const sentRequest = captureRequest(
+      new URL("https://example.com/get?hello=world"),
+      "GET",
+      new Headers({ accept: "application/json" }),
+    );
+
+    render(<I18nProvider>
+      <RequestActions
+        method="GET" sentRequest={null} result={null} makeRequest={makeRequest}
+        followRedirect={true} setFollowRedirect={() => {}} loading={false}
+        onSend={() => {}} onCancel={() => {}} errorMessage="" onError={() => {}}
+      />
+    </I18nProvider>);
+    expect(screen.getByRole("button", { name: "Copy Req + Res" }).hasAttribute("disabled")).toBe(true);
+    cleanup();
+
+    render(<I18nProvider>
+      <RequestActions
+        method="GET" sentRequest={sentRequest} result={response} makeRequest={makeRequest}
+        followRedirect={true} setFollowRedirect={() => {}} loading={false}
+        onSend={() => {}} onCancel={() => {}} errorMessage="" onError={() => {}}
+      />
+    </I18nProvider>);
+    fireEvent.click(screen.getByRole("button", { name: "Copy Req + Res" }));
+    await waitFor(() => expect(copied).toHaveLength(1));
+    expect(copied[0]).toContain("GET /get?hello=world");
+    expect(copied[0]).toContain("200 OK");
+    expect(copied[0]).not.toContain("example.com");
   });
 
   test("supports keyboard navigation, Escape, send and cancellation", () => {

@@ -40,6 +40,7 @@ const messages = {
   "credentialsHint": "Inloggegevens blijven in deze browsersessie en worden niet opgeslagen.",
   "followRedirects": "Omleidingen automatisch volgen",
   "copyCurl": "cURL kopiëren",
+  "copyExchange": "Verzoek en antwoord kopiëren",
   "copied": "Gekopieerd",
   "send": "Verzoek verzenden",
   "sending": "Bezig met verzenden...",

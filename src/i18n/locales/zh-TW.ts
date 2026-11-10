@@ -40,6 +40,7 @@ const messages = {
   "credentialsHint": "認證資料只在目前瀏覽器工作階段使用，不會由測試台儲存。",
   "followRedirects": "自動追蹤重新導向",
   "copyCurl": "複製 cURL",
+  "copyExchange": "複製請求與回應",
   "copied": "已複製",
   "send": "傳送請求",
   "sending": "傳送中...",

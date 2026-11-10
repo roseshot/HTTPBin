@@ -40,6 +40,7 @@ const messages = {
   "credentialsHint": "Le credenziali restano in questa sessione e non sono memorizzate dalla console.",
   "followRedirects": "Segui automaticamente i reindirizzamenti",
   "copyCurl": "Copia cURL",
+  "copyExchange": "Copia richiesta e risposta",
   "copied": "Copiato",
   "send": "Invia richiesta",
   "sending": "Invio in corso...",

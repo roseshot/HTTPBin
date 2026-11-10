@@ -40,6 +40,7 @@ const messages = {
   "credentialsHint": "Thông tin đăng nhập chỉ dùng trong phiên hiện tại và không được công cụ lưu trữ.",
   "followRedirects": "Tự động theo chuyển hướng",
   "copyCurl": "Sao chép cURL",
+  "copyExchange": "Sao chép yêu cầu và phản hồi",
   "copied": "Đã sao chép",
   "send": "Gửi yêu cầu",
   "sending": "Đang gửi...",

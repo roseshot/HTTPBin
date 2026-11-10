@@ -40,6 +40,7 @@ const messages = {
   "credentialsHint": "Las credenciales solo se usan en esta sesión y no se guardan en la consola.",
   "followRedirects": "Seguir redirecciones automáticamente",
   "copyCurl": "Copiar cURL",
+  "copyExchange": "Copiar solicitud y respuesta",
   "copied": "Copiado",
   "send": "Enviar solicitud",
   "sending": "Enviando...",

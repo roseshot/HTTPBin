@@ -50,6 +50,7 @@ export const english = {
   "credentialsHint": "Credentials stay in this browser session and are not stored by the playground.",
   "followRedirects": "Automatically follow redirects",
   "copyCurl": "Copy cURL",
+  "copyExchange": "Copy Req + Res",
   "copied": "Copied",
   "send": "Send Request",
   "sending": "Sending...",

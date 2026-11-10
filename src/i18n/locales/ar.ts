@@ -40,6 +40,7 @@ const messages = {
   "credentialsHint": "تُستخدم بيانات الاعتماد في هذه الجلسة فقط ولا يحفظها المختبر.",
   "followRedirects": "اتباع إعادة التوجيه تلقائياً",
   "copyCurl": "نسخ cURL",
+  "copyExchange": "نسخ الطلب والاستجابة",
   "copied": "تم النسخ",
   "send": "إرسال الطلب",
   "sending": "جارٍ الإرسال...",

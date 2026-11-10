@@ -40,6 +40,7 @@ const messages = {
   "credentialsHint": "자격 증명은 현재 브라우저 세션에서만 사용되며 저장되지 않습니다.",
   "followRedirects": "리디렉션 자동 따라가기",
   "copyCurl": "cURL 복사",
+  "copyExchange": "요청 및 응답 복사",
   "copied": "복사됨",
   "send": "요청 보내기",
   "sending": "전송 중...",
