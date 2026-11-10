@@ -107,7 +107,7 @@ describe("Playground browser interactions", () => {
     }
 
     render(<Viewer />);
-    expect(screen.getByRole("status").textContent).toContain("Unexpected HTML response");
+    expect(screen.getByText("Unexpected HTML response")).toBeTruthy();
     expect(document.querySelector(".result-body")).toBeNull();
     expect(screen.queryByText(/Unexpected fallback/)).toBeNull();
     expect(screen.getByText("200")).toBeTruthy();
