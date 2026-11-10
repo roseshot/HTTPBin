@@ -47,6 +47,8 @@ const messages = {
   "format": "형식",
   "emptyBody": "(빈 응답 본문)",
   "binaryReceived": "바이너리 응답을 받았습니다. 원시 바이트는 cURL로 확인하세요.",
+  "unexpectedHtmlTitle": "예기치 않은 HTML 응답",
+  "unexpectedHtmlHelp": "서버가 예상한 API 응답 대신 HTML 페이지를 반환했습니다. 요청 경로와 라우팅을 확인하세요. HTML 소스 코드는 숨겨졌습니다.",
   "imagePreview": "응답 미리보기",
   "finalUrl": "최종 URL",
   "timeline": "타임라인",

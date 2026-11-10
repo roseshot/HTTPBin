@@ -47,6 +47,8 @@ const messages = {
   "format": "Biçim",
   "emptyBody": "(boş yanıt gövdesi)",
   "binaryReceived": "İkili yanıt alındı. Ham baytları incelemek için cURL kullanın.",
+  "unexpectedHtmlTitle": "Beklenmeyen HTML yanıtı",
+  "unexpectedHtmlHelp": "Sunucu, beklenen API yanıtı yerine bir HTML sayfası döndürdü. İstek yolunu ve yönlendirmeyi kontrol edin. HTML kaynak kodu gizlendi.",
   "imagePreview": "Yanıt önizlemesi",
   "finalUrl": "Son URL",
   "timeline": "Zaman çizelgesi",

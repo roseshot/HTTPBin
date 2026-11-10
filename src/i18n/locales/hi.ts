@@ -47,6 +47,8 @@ const messages = {
   "format": "प्रारूप",
   "emptyBody": "(खाली प्रतिक्रिया बॉडी)",
   "binaryReceived": "बाइनरी प्रतिक्रिया मिली। मूल बाइट्स देखने के लिए cURL उपयोग करें।",
+  "unexpectedHtmlTitle": "अप्रत्याशित HTML प्रतिक्रिया",
+  "unexpectedHtmlHelp": "सर्वर ने अपेक्षित API प्रतिक्रिया के बजाय एक HTML पेज लौटाया। अनुरोध पथ और रूटिंग जाँचें। HTML स्रोत कोड छिपा दिया गया है।",
   "imagePreview": "प्रतिक्रिया पूर्वावलोकन",
   "finalUrl": "अंतिम URL",
   "timeline": "समयरेखा",

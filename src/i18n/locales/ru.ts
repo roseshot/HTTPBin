@@ -47,6 +47,8 @@ const messages = {
   "format": "Формат",
   "emptyBody": "(пустое тело ответа)",
   "binaryReceived": "Получен двоичный ответ. Просмотрите исходные байты через cURL.",
+  "unexpectedHtmlTitle": "Неожиданный HTML-ответ",
+  "unexpectedHtmlHelp": "Сервер вернул HTML-страницу вместо ожидаемого ответа API. Проверьте путь запроса и маршрутизацию. Исходный код HTML скрыт.",
   "imagePreview": "Предпросмотр ответа",
   "finalUrl": "Конечный URL",
   "timeline": "Хронология",

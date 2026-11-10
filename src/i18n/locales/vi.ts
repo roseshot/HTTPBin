@@ -47,6 +47,8 @@ const messages = {
   "format": "Định dạng",
   "emptyBody": "(phản hồi rỗng)",
   "binaryReceived": "Đã nhận phản hồi nhị phân. Dùng cURL để xem các byte gốc.",
+  "unexpectedHtmlTitle": "Phản hồi HTML không mong đợi",
+  "unexpectedHtmlHelp": "Máy chủ trả về trang HTML thay vì phản hồi API mong đợi. Hãy kiểm tra đường dẫn yêu cầu và định tuyến. Mã nguồn HTML đã được ẩn.",
   "imagePreview": "Xem trước phản hồi",
   "finalUrl": "URL cuối",
   "timeline": "Dòng thời gian",

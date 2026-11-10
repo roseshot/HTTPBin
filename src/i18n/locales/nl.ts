@@ -47,6 +47,8 @@ const messages = {
   "format": "Formaat",
   "emptyBody": "(lege antwoordinhoud)",
   "binaryReceived": "Binair antwoord ontvangen. Gebruik cURL om de ruwe bytes te bekijken.",
+  "unexpectedHtmlTitle": "Onverwacht HTML-antwoord",
+  "unexpectedHtmlHelp": "De server stuurde een HTML-pagina terug in plaats van het verwachte API-antwoord. Controleer het aanvraagpad en de routering. De HTML-broncode is verborgen.",
   "imagePreview": "Voorbeeld van antwoord",
   "finalUrl": "Definitieve URL",
   "timeline": "Tijdlijn",

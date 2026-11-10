@@ -47,6 +47,8 @@ const messages = {
   "format": "Formato",
   "emptyBody": "(corpo vuoto)",
   "binaryReceived": "Ricevuta risposta binaria. Usa cURL per analizzare i byte originali.",
+  "unexpectedHtmlTitle": "Risposta HTML imprevista",
+  "unexpectedHtmlHelp": "Il server ha restituito una pagina HTML anziché la risposta API prevista. Controlla il percorso della richiesta e il routing. Il codice HTML è nascosto.",
   "imagePreview": "Anteprima risposta",
   "finalUrl": "URL finale",
   "timeline": "Cronologia",

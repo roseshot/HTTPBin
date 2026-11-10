@@ -47,6 +47,8 @@ const messages = {
   "format": "التنسيق",
   "emptyBody": "(استجابة فارغة)",
   "binaryReceived": "تم استلام استجابة ثنائية. استخدم cURL لفحص البايتات الخام.",
+  "unexpectedHtmlTitle": "استجابة HTML غير متوقعة",
+  "unexpectedHtmlHelp": "أعاد الخادم صفحة HTML بدلاً من استجابة API المتوقعة. تحقق من مسار الطلب وإعدادات التوجيه. تم إخفاء شيفرة HTML.",
   "imagePreview": "معاينة الاستجابة",
   "finalUrl": "عنوان URL النهائي",
   "timeline": "الجدول الزمني",

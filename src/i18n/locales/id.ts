@@ -47,6 +47,8 @@ const messages = {
   "format": "Format",
   "emptyBody": "(isi respons kosong)",
   "binaryReceived": "Respons biner diterima. Gunakan cURL untuk memeriksa byte asli.",
+  "unexpectedHtmlTitle": "Respons HTML tidak terduga",
+  "unexpectedHtmlHelp": "Server mengembalikan halaman HTML, bukan respons API yang diharapkan. Periksa jalur permintaan dan perutean. Kode sumber HTML disembunyikan.",
   "imagePreview": "Pratinjau respons",
   "finalUrl": "URL akhir",
   "timeline": "Linimasa",

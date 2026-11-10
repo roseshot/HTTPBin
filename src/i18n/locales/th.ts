@@ -47,6 +47,8 @@ const messages = {
   "format": "รูปแบบ",
   "emptyBody": "(เนื้อหาตอบกลับว่าง)",
   "binaryReceived": "ได้รับการตอบกลับแบบไบนารี ใช้ cURL ตรวจสอบไบต์ต้นฉบับ",
+  "unexpectedHtmlTitle": "ได้รับการตอบกลับ HTML ที่ไม่คาดคิด",
+  "unexpectedHtmlHelp": "เซิร์ฟเวอร์ส่งหน้า HTML กลับมาแทนการตอบกลับ API ที่คาดไว้ โปรดตรวจสอบพาธคำขอและการกำหนดเส้นทาง โดยซ่อนซอร์ส HTML ไว้",
   "imagePreview": "ตัวอย่างการตอบกลับ",
   "finalUrl": "URL สุดท้าย",
   "timeline": "ไทม์ไลน์",

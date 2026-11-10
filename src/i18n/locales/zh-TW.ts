@@ -47,6 +47,8 @@ const messages = {
   "format": "格式",
   "emptyBody": "（空回應主體）",
   "binaryReceived": "已收到二進位回應，請使用 cURL 檢查原始位元組。",
+  "unexpectedHtmlTitle": "非預期的 HTML 回應",
+  "unexpectedHtmlHelp": "伺服器傳回 HTML 頁面，而非預期的 API 回應。請檢查請求路徑與路由設定。HTML 原始碼已隱藏。",
   "imagePreview": "回應預覽",
   "finalUrl": "最終 URL",
   "timeline": "時間軸",

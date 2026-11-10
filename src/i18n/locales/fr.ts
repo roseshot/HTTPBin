@@ -47,6 +47,8 @@ const messages = {
   "format": "Format",
   "emptyBody": "(corps vide)",
   "binaryReceived": "Réponse binaire reçue. Utilisez cURL pour examiner les octets bruts.",
+  "unexpectedHtmlTitle": "Réponse HTML inattendue",
+  "unexpectedHtmlHelp": "Le serveur a renvoyé une page HTML au lieu de la réponse API attendue. Vérifiez le chemin de la requête et le routage. Le code source HTML est masqué.",
   "imagePreview": "Aperçu de la réponse",
   "finalUrl": "URL finale",
   "timeline": "Chronologie",

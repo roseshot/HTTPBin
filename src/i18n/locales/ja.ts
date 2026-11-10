@@ -47,6 +47,8 @@ const messages = {
   "format": "形式",
   "emptyBody": "（空のレスポンス本文）",
   "binaryReceived": "バイナリレスポンスを受信しました。生データは cURL で確認してください。",
+  "unexpectedHtmlTitle": "予期しない HTML レスポンス",
+  "unexpectedHtmlHelp": "サーバーが想定された API レスポンスの代わりに HTML ページを返しました。リクエストのパスとルーティングを確認してください。HTML ソースは非表示です。",
   "imagePreview": "レスポンスのプレビュー",
   "finalUrl": "最終 URL",
   "timeline": "タイムライン",
