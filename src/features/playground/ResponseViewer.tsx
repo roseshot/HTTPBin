@@ -31,7 +31,8 @@ export function ResponseViewer({ result, responseTab, setResponseTab }: Props) {
             <TabsList className="tab-list"><TabsTab className="tab-trigger" value="body">{t("body")}</TabsTab><TabsTab className="tab-trigger" value="headers">{t("headers")} <span className="counter">{result.headers.length}</span></TabsTab><TabsTab className="tab-trigger" value="timeline">{t("timeline")} <span className="counter">{result.chunks}</span></TabsTab></TabsList>
             <TabsPanel value="body" className="tab-panel">
               <div className="editor-label">{t("format")}: <strong>{contentKind(result.contentType)}</strong> · {result.contentType}</div>
-              {result.imageUrl ? <img className="image-preview" src={result.imageUrl} alt={t("imagePreview")} /> :
+              {result.unexpectedHtml ? <div className="response-placeholder" role="status"><strong>{t("unexpectedHtmlTitle")}</strong><p>{t("unexpectedHtmlHelp")}</p></div> :
+                result.imageUrl ? <img className="image-preview" src={result.imageUrl} alt={t("imagePreview")} /> :
                 contentKind(result.contentType) === "BINARY" ? <div className="empty-note">{t("binaryReceived")} ({formatNumber(result.bytes)} B)</div> :
                 <pre className="result-body">{pretty(result.text, result.contentType) || t("emptyBody")}</pre>}
               {result.warning && <p className="result-hint">{result.warning}</p>}

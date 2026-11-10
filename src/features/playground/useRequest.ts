@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Method } from "../../../shared/endpoints";
 import { useI18n } from "../../i18n";
 import type { AuthType, BodyMode, Pair, Result, Timeline } from "./types";
+import { isUnexpectedHtmlResponse } from "./response-content";
 
 interface RequestConfig {
   path: string;
@@ -81,6 +82,7 @@ export function useRequest({ path, method, params, headers, authType, username, 
       });
       const headersList = Array.from(response.headers.entries());
       const type = response.headers.get("content-type") || "application/octet-stream";
+      const unexpectedHtml = isUnexpectedHtmlResponse(type, response.status, input.url.pathname);
       let text = "";
       let count = 0;
       let size = 0;
@@ -95,11 +97,12 @@ export function useRequest({ path, method, params, headers, authType, username, 
           size += value.byteLength;
           count++;
           chunks.push(value);
-          if (!type.startsWith("image/") && size < 2 * 1024 * 1024) text += decoder.decode(value, { stream: true });
+          if (!type.startsWith("image/") && !unexpectedHtml && size < 2 * 1024 * 1024) text += decoder.decode(value, { stream: true });
           timeline.push({ time: Math.round(performance.now() - start), label: t("chunk") + " " + count + " · " + formatNumber(value.byteLength) + " " + t("bytes") });
           if (!type.startsWith("image/")) {
             setResult({ status: response.status, statusText: response.statusText, elapsed: Math.round(performance.now() - start), headers: headersList,
-              text, bytes: size, contentType: type, finalUrl: response.url, redirected: response.redirected, chunks: count, timeline: [...timeline] });
+              text, bytes: size, contentType: type, finalUrl: response.url, redirected: response.redirected, chunks: count,
+              timeline: [...timeline], unexpectedHtml });
           }
         }
         text += decoder.decode();
@@ -115,7 +118,8 @@ export function useRequest({ path, method, params, headers, authType, username, 
         response.redirected ? t("redirectWarning") : undefined;
       setResult({ status: response.status, statusText: response.statusText, elapsed: Math.round(performance.now() - start),
         headers: headersList, text, bytes: size, contentType: type, ...(imageUrl === undefined ? {} : { imageUrl }),
-        finalUrl: response.url, redirected: response.redirected, chunks: count, timeline, ...(warning === undefined ? {} : { warning }) });
+        finalUrl: response.url, redirected: response.redirected, chunks: count, timeline, unexpectedHtml,
+        ...(warning === undefined ? {} : { warning }) });
     } catch (error) {
       if (!controller.signal.aborted) setErrorMessage(error instanceof Error ? error.message : t("errorFailed"));
     } finally {

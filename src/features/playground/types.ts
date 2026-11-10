@@ -17,6 +17,7 @@ export type Result = {
   chunks: number;
   timeline: Timeline[];
   warning?: string;
+  unexpectedHtml?: boolean;
 };
 let nextPairId = 0;
 export function pair(key = "", value = ""): Pair { return { id: ++nextPairId, key, value }; }

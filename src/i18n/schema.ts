@@ -57,6 +57,8 @@ export const english = {
   "format": "Format",
   "emptyBody": "(empty response body)",
   "binaryReceived": "Binary response received. Use cURL to inspect the raw bytes.",
+  "unexpectedHtmlTitle": "Unexpected HTML response",
+  "unexpectedHtmlHelp": "The server returned an HTML page instead of the expected API response. Check the request path and routing. The HTML source is hidden.",
   "imagePreview": "Response preview",
   "finalUrl": "Final URL",
   "timeline": "Timeline",

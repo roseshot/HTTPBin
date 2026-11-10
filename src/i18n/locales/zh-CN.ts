@@ -47,6 +47,8 @@ const messages = {
   "format": "格式",
   "emptyBody": "（空响应体）",
   "binaryReceived": "已收到二进制响应，请使用 cURL 检查原始字节。",
+  "unexpectedHtmlTitle": "非预期的 HTML 响应",
+  "unexpectedHtmlHelp": "服务器返回了 HTML 页面，而不是预期的 API 响应。请检查请求路径和路由配置。HTML 源码已隐藏。",
   "imagePreview": "响应预览",
   "finalUrl": "最终 URL",
   "timeline": "时间线",

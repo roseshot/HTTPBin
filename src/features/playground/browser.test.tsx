@@ -84,6 +84,37 @@ describe("Playground browser interactions", () => {
     expect(cancelled).toBe(1);
   });
 
+  test("shows a helpful message instead of unexpected HTML source", () => {
+    const result: Result = {
+      status: 200,
+      statusText: "OK",
+      elapsed: 10,
+      headers: [["content-type", "text/html"]],
+      text: "<!doctype html><html><body>Unexpected fallback</body></html>",
+      bytes: 63,
+      contentType: "text/html",
+      finalUrl: "https://example.com/missing",
+      redirected: false,
+      chunks: 1,
+      timeline: [{ time: 10, label: "Received" }],
+      unexpectedHtml: true,
+    };
+    function Viewer() {
+      const [tab, setTab] = useState<ResponseTab>("body");
+      return <I18nProvider>
+        <ResponseViewer result={result} responseTab={tab} setResponseTab={setTab} />
+      </I18nProvider>;
+    }
+
+    render(<Viewer />);
+    expect(screen.getByRole("status").textContent).toContain("Unexpected HTML response");
+    expect(document.querySelector(".result-body")).toBeNull();
+    expect(screen.queryByText(/Unexpected fallback/)).toBeNull();
+    expect(screen.getByText("200")).toBeTruthy();
+    fireEvent.click(screen.getByRole("tab", { name: /headers/i }));
+    expect(document.querySelector(".doc-row")?.textContent).toContain("text/html");
+  });
+
   test("shows response body and headers in the selected tab", () => {
     const response: Result = {
       status: 200,
