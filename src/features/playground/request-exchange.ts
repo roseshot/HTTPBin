@@ -35,6 +35,7 @@ function omitDomains(value: string, origin: string): string {
   return value
     .replaceAll(origin, "")
     .replace(/https?:\/\/[^\s/?#"'<>\\]+/gi, "")
+    .replace(/https?%3a%2f%2f[^\s%/?#&"'<>\\]+/gi, "")
     .replaceAll(host, "[domain omitted]");
 }
 

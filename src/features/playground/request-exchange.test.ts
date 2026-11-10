@@ -80,5 +80,7 @@ describe("Request and response clipboard formatting", () => {
     expect(output).toContain('"title":"An example"');
     expect(output).not.toContain("example.com");
     expect(output).not.toContain("other.test/page");
+    expect(output).not.toContain("other.test");
+    expect(output).toContain("GET /get?q=%2Fx");
   });
 });
