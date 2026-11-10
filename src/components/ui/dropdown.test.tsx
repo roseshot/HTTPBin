@@ -22,6 +22,8 @@ describe("Custom CSS dropdown", () => {
     fireEvent.click(trigger);
 
     const option = await screen.findByRole("option", { name: "POST" });
+    fireEvent.pointerDown(option, { pointerType: "mouse", button: 0 });
+    fireEvent.pointerUp(option, { pointerType: "mouse", button: 0 });
     fireEvent.click(option);
     await waitFor(() => expect(trigger.textContent).toContain("POST"));
     expect(screen.queryByRole("listbox")).toBeNull();

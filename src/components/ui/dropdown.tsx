@@ -35,7 +35,7 @@ export function Dropdown<T extends string>({ ariaLabel, value, options, onChange
               {options.map((option) => (
                 <Select.Item key={option.value} value={option.value} className="ui-dropdown-option">
                   <Select.ItemText className="ui-dropdown-option-text">{option.label}</Select.ItemText>
-                  <Select.ItemIndicator className="ui-dropdown-indicator" />
+                  <Select.ItemIndicator className="ui-dropdown-indicator"><span aria-hidden="true" /></Select.ItemIndicator>
                 </Select.Item>
               ))}
             </Select.List>
