@@ -8,6 +8,7 @@ import { RequestActions } from "./features/playground/RequestActions";
 import { RequestEditor } from "./features/playground/RequestEditor";
 import { ResponseViewer } from "./features/playground/ResponseViewer";
 import { useRequest } from "./features/playground/useRequest";
+import { endpointRequestDefaults } from "./features/playground/request-defaults";
 import { pair, type BodyMode, type Pair, type RequestTab, type ResponseTab, type AuthType } from "./features/playground/types";
 import { useI18n } from "./i18n";
 import type { MessageKey } from "./i18n/schema";
@@ -41,10 +42,6 @@ function savedTheme(): Theme | null {
   }
 }
 
-function pathFor(endpoint: Endpoint): string {
-  if (endpoint.example) return endpoint.example;
-  return endpoint.path.replace(/\{([^}]+)\}/g, (_match, name: string) => endpoint.parameters?.find((item) => item.name === name)?.example || "1");
-}
 function methodBadge(method: Method) {
   return <span className={"method method-" + method}>{method}</span>;
 }
@@ -71,25 +68,26 @@ export default function App() {
     if (!fallback) throw new Error("Endpoint catalog must not be empty.");
     return endpoints.find((endpoint) => endpoint.path === selected) ?? fallback;
   })();
+  const initialRequest = endpointRequestDefaults(initial);
   const [selected, setSelected] = useState<Endpoint>(initial);
   const [search, setSearch] = useState("");
   const [closedGroups, setClosedGroups] = useState<string[]>([]);
   const [themeOverride, setThemeOverride] = useState<Theme | null>(savedTheme);
   const [systemTheme, setSystemTheme] = useState<Theme>(() => window.matchMedia(SYSTEM_DARK_QUERY).matches ? "dark" : "light");
   const theme = themeOverride ?? systemTheme;
-  const [path, setPath] = useState(pathFor(initial));
-  const [method, setMethod] = useState<Method>(initial.method === "ANY" ? "GET" : initial.method);
+  const [path, setPath] = useState(initialRequest.path);
+  const [method, setMethod] = useState<Method>(initialRequest.method);
   const [requestTab, setRequestTab] = useState<RequestTab>("params");
   const [responseTab, setResponseTab] = useState<ResponseTab>("body");
-  const [bodyMode, setBodyMode] = useState<BodyMode>("json");
-  const [body, setBody] = useState('{\n  "hello": "world"\n}');
-  const [params, setParams] = useState<Pair[]>([]);
-  const [headers, setHeaders] = useState<Pair[]>([]);
+  const [bodyMode, setBodyMode] = useState<BodyMode>(initialRequest.bodyMode);
+  const [body, setBody] = useState(initialRequest.body);
+  const [params, setParams] = useState<Pair[]>(() => initialRequest.params.map(({ key, value }) => pair(key, value)));
+  const [headers, setHeaders] = useState<Pair[]>(() => initialRequest.headers.map(({ key, value }) => pair(key, value)));
   const [formRows, setFormRows] = useState<Pair[]>([pair()]);
-  const [authType, setAuthType] = useState<AuthType>("none");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [token, setToken] = useState("");
+  const [authType, setAuthType] = useState<AuthType>(initialRequest.authType);
+  const [username, setUsername] = useState(initialRequest.username);
+  const [password, setPassword] = useState(initialRequest.password);
+  const [token, setToken] = useState(initialRequest.token);
   const [followRedirect, setFollowRedirect] = useState(true);
   const searchRef = useRef<HTMLInputElement>(null);
   const { result, errorMessage, loading, setErrorMessage, makeRequest, sendRequest, cancelRequest, resetRequest } = useRequest({
@@ -132,13 +130,20 @@ export default function App() {
   }, []);
 
   const selectEndpoint = (endpoint: Endpoint) => {
+    const sample = endpointRequestDefaults(endpoint);
     resetRequest();
     setSelected(endpoint);
-    setPath(pathFor(endpoint));
-    setMethod(endpoint.method === "ANY" ? "GET" : endpoint.method);
-    setParams([]);
-    setHeaders([]);
-    setAuthType("none");
+    setPath(sample.path);
+    setMethod(sample.method);
+    setParams(sample.params.map(({ key, value }) => pair(key, value)));
+    setHeaders(sample.headers.map(({ key, value }) => pair(key, value)));
+    setBodyMode(sample.bodyMode);
+    setBody(sample.body);
+    setFormRows([pair()]);
+    setAuthType(sample.authType);
+    setUsername(sample.username);
+    setPassword(sample.password);
+    setToken(sample.token);
     const url = new URL(window.location.href);
     url.searchParams.set("endpoint", endpoint.path);
     window.history.replaceState(null, "", url.pathname + url.search);
