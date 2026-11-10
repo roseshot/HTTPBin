@@ -2,14 +2,13 @@ import type { Dispatch, SetStateAction } from "react";
 import { Globe2, Plus, Trash2 } from "lucide-react";
 import type { Method } from "../../../shared/endpoints";
 import { Button } from "../../components/ui/button";
+import { Dropdown } from "../../components/ui/dropdown";
 import { TabsList, TabsPanel, TabsRoot, TabsTab } from "../../components/ui/tabs";
 import { useI18n } from "../../i18n";
 import { pair, type AuthType, type BodyMode, type Pair, type RequestTab } from "./types";
 
 const requestMethods = ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "QUERY"] as const satisfies readonly Method[];
 const requestTabs = ["params", "headers", "body", "auth"] as const satisfies readonly RequestTab[];
-const bodyModes = ["json", "text", "form", "multipart", "binary", "none"] as const satisfies readonly BodyMode[];
-const authTypes = ["none", "basic", "bearer"] as const satisfies readonly AuthType[];
 
 function isOption<T extends string>(options: readonly T[], value: string): value is T {
   return options.some((option) => option === value);
@@ -67,7 +66,7 @@ export function RequestEditor({ method, setMethod, path, setPath, requestTab, se
     <>
           <div className="caption"><Globe2 size={14} /> {t("request")}</div>
           <div className="request-bar">
-            <select aria-label="HTTP method" value={method} onChange={(event) => isOption(requestMethods, event.target.value) && setMethod(event.target.value)}>{requestMethods.map((value) => <option key={value}>{value}</option>)}</select>
+            <Dropdown ariaLabel="HTTP method" value={method} onChange={setMethod} options={requestMethods.map((value) => ({ value, label: value }))} variant="method" />
             <input aria-label="Request path" value={path} onChange={(event) => setPath(event.target.value)} spellCheck={false} />
           </div>
           <div className="help-text"><Globe2 size={12} /><code>{window.location.origin}</code><span>·</span><span>{t("sameOrigin")}</span></div>
@@ -77,9 +76,14 @@ export function RequestEditor({ method, setMethod, path, setPath, requestTab, se
             <TabsPanel value="headers" className="tab-panel"><KeyValueEditor rows={headers} onChange={setHeaders} noun={t("headers")} /></TabsPanel>
             <TabsPanel value="body" className="tab-panel">
               <div className="editor-label">{t("contentType")}</div>
-              <select className="field" aria-label="Request body mode" value={bodyMode} onChange={(event) => isOption(bodyModes, event.target.value) && setBodyMode(event.target.value)}>
-                <option value="json">{t("json")}</option><option value="text">{t("plainText")}</option><option value="form">{t("form")}</option><option value="multipart">{t("multipart")}</option><option value="binary">{t("binary")}</option><option value="none">{t("noBody")}</option>
-              </select>
+              <Dropdown ariaLabel="Request body mode" value={bodyMode} onChange={setBodyMode} options={[
+                { value: "json", label: t("json") },
+                { value: "text", label: t("plainText") },
+                { value: "form", label: t("form") },
+                { value: "multipart", label: t("multipart") },
+                { value: "binary", label: t("binary") },
+                { value: "none", label: t("noBody") },
+              ]} />
               {bodyMode === "form" || bodyMode === "multipart" ? <div style={{ marginTop: 13 }}><KeyValueEditor rows={formRows} onChange={setFormRows} noun={t("value")} /></div> :
                 bodyMode !== "none" ? <><div className="label">{t("payload")}</div><textarea spellCheck={false} aria-label="Request body" className="editor" value={body} onChange={(event) => setBody(event.target.value)} /></> :
                 <p className="result-hint">{t("noBodyMessage")}</p>}
@@ -87,9 +91,11 @@ export function RequestEditor({ method, setMethod, path, setPath, requestTab, se
             </TabsPanel>
             <TabsPanel value="auth" className="tab-panel">
               <div className="editor-label">{t("authScheme")}</div>
-              <select className="field" value={authType} aria-label="Authorization type" onChange={(event) => isOption(authTypes, event.target.value) && setAuthType(event.target.value)}>
-                <option value="none">{t("noAuth")}</option><option value="basic">{t("basicAuth")}</option><option value="bearer">{t("bearerToken")}</option>
-              </select>
+              <Dropdown ariaLabel="Authorization type" value={authType} onChange={setAuthType} options={[
+                { value: "none", label: t("noAuth") },
+                { value: "basic", label: t("basicAuth") },
+                { value: "bearer", label: t("bearerToken") },
+              ]} />
               {authType === "basic" && <><label className="label" htmlFor="username">{t("username")}</label><input className="field" id="username" value={username} onChange={(event) => setUsername(event.target.value)} /><label className="label" htmlFor="password">{t("password")}</label><input className="field" type="password" id="password" value={password} onChange={(event) => setPassword(event.target.value)} /></>}
               {authType === "bearer" && <><label className="label" htmlFor="token">{t("token")}</label><input className="field" type="password" id="token" value={token} onChange={(event) => setToken(event.target.value)} /></>}
               <p className="result-hint">{t("credentialsHint")}</p>

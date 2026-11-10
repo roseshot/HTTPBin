@@ -4,6 +4,7 @@ import {
   Moon, Search, ShieldCheck, Sun, Terminal, Zap,
 } from "lucide-react";
 import { endpoints, groups, type Endpoint, type Method } from "../shared/endpoints";
+import { Dropdown } from "./components/ui/dropdown";
 import { RequestActions } from "./features/playground/RequestActions";
 import { RequestEditor } from "./features/playground/RequestEditor";
 import { ResponseViewer } from "./features/playground/ResponseViewer";
@@ -168,7 +169,7 @@ export default function App() {
         <a className="top-link" href={href("/docs")}><Layers3 size={15} /><span>{t("apiExplorer")}</span></a>
         <a className="top-link" href="/openapi.json" target="_blank" rel="noreferrer"><FileJson2 size={15} /><span>OpenAPI</span></a>
         <a className="top-link" href={href("/standards")} aria-label={t("rfcTitle")} aria-current={showStandards ? "page" : undefined}><ShieldCheck size={15} /><span>{t("standards")}</span></a>
-        <label className="language-picker"><Languages size={15} aria-hidden="true" /><select aria-label={t("language")} value={locale} onChange={(event) => setLocale(event.target.value as typeof locale)}>{locales.map(({ code, name }) => <option key={code} value={code}>{name}</option>)}</select></label>
+        <div className="language-picker"><Languages size={15} aria-hidden="true" /><Dropdown ariaLabel={t("language")} value={locale} onChange={setLocale} options={locales.map(({ code, name }) => ({ value: code, label: name }))} variant="language" /></div>
         <span className="top-divider" />
         <button className="icon-button" aria-label={theme === "dark" ? t("themeLight") : t("themeDark")} onClick={toggleTheme}>{theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}</button>
       </nav>

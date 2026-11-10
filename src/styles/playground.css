@@ -6,7 +6,6 @@
 .playground-scroller { flex: 1; overflow: auto; padding: 23px 23px 32px; }
 .caption { display: flex; align-items: center; gap: 9px; color: var(--muted); text-transform: uppercase; font-size: 10px; letter-spacing: 1px; font-weight: 800; margin-bottom: 11px; }
 .request-bar { display: flex; gap: 8px; padding: 6px; background: var(--bg); border: 1px solid var(--border); border-radius: 9px; }
-.request-bar select { background: var(--panel-2); color: var(--green); border: 1px solid var(--border); border-radius: 6px; width: 94px; padding: 8px; font-size: 11px; font-weight: 800; outline: none; }
 .request-bar input { background: transparent; border: 0; color: var(--text); outline: 0; width: 100%; min-width: 0; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; }
 .help-text { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; color: var(--subtle); font-size: 11px; margin: 10px 1px 19px; }
 .help-text code { color: var(--muted); font-size: 10px; }
