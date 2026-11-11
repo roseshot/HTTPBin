@@ -58,6 +58,14 @@
 .json-view-switch button:hover { color: var(--text); background: var(--panel-3); }
 .json-view-switch button[aria-pressed="true"] { background: var(--bg); color: var(--blue); box-shadow: 0 1px 3px #0002; }
 .json-view-switch button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.json-table-scroll { width: 100%; overflow-x: auto; max-height: 400px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); }
+.json-table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: start; font-size: 11px; }
+.json-table th { position: sticky; top: 0; z-index: 1; padding: 9px 12px; border-bottom: 1px solid var(--border); background: var(--panel-2); color: var(--muted); font-weight: 750; text-align: start; white-space: nowrap; }
+.json-table td { max-width: 320px; min-width: 90px; padding: 10px 12px; border-top: 1px solid var(--border-light); vertical-align: top; }
+.json-table tbody tr:first-child td { border-top: 0; }
+.json-table th + th, .json-table td + td { border-inline-start: 1px solid var(--border-light); }
+.json-table tbody tr:hover { background: var(--panel-2); }
+.json-cell { display: block; max-height: 150px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; line-height: 1.6; color: var(--text); }
 .result-body { margin: 0; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 11px; color: var(--text); line-height: 1.75; overflow: auto; max-height: 400px; white-space: pre-wrap; overflow-wrap: anywhere; padding: 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; }
 .response-placeholder { padding: 35px 15px; text-align: center; border: 1px dashed var(--border); border-radius: 9px; color: var(--subtle); }
 .response-placeholder svg { margin: 0 auto 10px; opacity: .5; }

@@ -1,13 +1,10 @@
-import { useState, type Dispatch, type SetStateAction } from "react";
+import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { Clock3, Code2, Send, ShieldCheck } from "lucide-react";
 import { TabsList, TabsPanel, TabsRoot, TabsTab } from "../../components/ui/tabs";
 import { useI18n } from "../../i18n";
 import type { Result, ResponseTab } from "./types";
+import { jsonCellText, parseJsonTable } from "./json-table";
 
-function pretty(text: string, contentType: string): string {
-  if (!contentType.includes("json")) return text;
-  try { return JSON.stringify(JSON.parse(text), null, 2); } catch { return text; }
-}
 function contentKind(contentType: string) {
   if (contentType.includes("json")) return "JSON";
   if (contentType.startsWith("image/")) return "IMAGE";
@@ -22,7 +19,11 @@ interface Props {
 
 export function ResponseViewer({ result, responseTab, setResponseTab }: Props) {
   const { t, formatNumber } = useI18n();
-  const [jsonView, setJsonView] = useState<"formatted" | "raw">("formatted");
+  const [jsonView, setJsonView] = useState<"table" | "raw">("table");
+  const responseType = result?.contentType ?? "";
+  const responseText = result?.text ?? "";
+  const table = useMemo(() => contentKind(responseType) === "JSON" && responseText
+    ? parseJsonTable(responseText) : null, [responseType, responseText]);
   return (
     <>
           <div className="response-summary"><div className="caption" style={{ margin: 0 }}><Code2 size={14} /> {t("response")}</div>
@@ -33,15 +34,35 @@ export function ResponseViewer({ result, responseTab, setResponseTab }: Props) {
             <TabsPanel value="body" className="tab-panel">
               <div className="response-body-toolbar">
                 <div className="editor-label">{t("format")}: <strong>{contentKind(result.contentType)}</strong> · {result.contentType}</div>
-                {contentKind(result.contentType) === "JSON" && result.text.length > 0 && <fieldset className="json-view-switch" aria-label={t("format")}>
-                  <button type="button" aria-pressed={jsonView === "formatted"} onClick={() => setJsonView("formatted")}>{t("formatted")}</button>
+                {table && <fieldset className="json-view-switch" aria-label={t("format")}>
+                  <button type="button" aria-pressed={jsonView === "table"} onClick={() => setJsonView("table")}>{t("table")}</button>
                   <button type="button" aria-pressed={jsonView === "raw"} onClick={() => setJsonView("raw")}>{t("raw")}</button>
                 </fieldset>}
               </div>
               {result.unexpectedHtml ? <div className="response-placeholder" aria-live="polite"><strong>{t("unexpectedHtmlTitle")}</strong><p>{t("unexpectedHtmlHelp")}</p></div> :
                 result.imageUrl ? <img className="image-preview" src={result.imageUrl} alt={t("imagePreview")} /> :
                 contentKind(result.contentType) === "BINARY" ? <div className="empty-note">{t("binaryReceived")} ({formatNumber(result.bytes)} B)</div> :
-                <pre className="result-body">{(jsonView === "raw" ? result.text : pretty(result.text, result.contentType)) || t("emptyBody")}</pre>}
+                table && jsonView === "table" ?
+                  <div>
+                    <div className="json-table-scroll">
+                      <table className="json-table" aria-label={t("response") + " JSON"}>
+                        <thead><tr>
+                          {(table.kind === "object" ? [t("key"), t("value")] :
+                            table.kind === "array" ? ["#", t("value")] :
+                              table.kind === "scalar" ? [t("value")] : table.columns).map((name) =>
+                            <th scope="col" key={name}>{name}</th>)}
+                        </tr></thead>
+                        <tbody>
+                          {table.rows.map((row, index) =>
+                            <tr key={index}>{row.map((value, column) =>
+                              <td key={column}><span className="json-cell">{jsonCellText(value)}</span></td>)}</tr>)}
+                        </tbody>
+                      </table>
+                    </div>
+                    {!table.rows.length && <p className="result-hint">{t("tableEmpty")}</p>}
+                    {table.truncated && <p className="result-hint">{t("tablePreview")}</p>}
+                  </div> :
+                  <pre className="result-body">{result.text || t("emptyBody")}</pre>}
               {result.warning && <p className="result-hint">{result.warning}</p>}
               {result.redirected && <p className="result-hint">{t("finalUrl")}: {result.finalUrl}</p>}
             </TabsPanel>

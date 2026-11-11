@@ -161,7 +161,7 @@ describe("Playground browser interactions", () => {
     expect(document.querySelector(".doc-row")?.textContent).toContain("text/html");
   });
 
-  test("switches JSON responses between formatted and exact raw text", () => {
+  test("switches JSON responses between table and exact raw text", () => {
     const response: Result = {
       status: 200, statusText: "OK", elapsed: 12,
       headers: [["content-type", "application/json"]],
@@ -173,13 +173,16 @@ describe("Playground browser interactions", () => {
     render(<I18nProvider>
       <ResponseViewer result={response} responseTab="body" setResponseTab={() => {}} />
     </I18nProvider>);
-    expect(document.querySelector(".result-body")?.textContent).toContain('"ok": true');
-    expect(screen.getByRole("button", { name: "Formatted" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("table")).toBeTruthy();
+    expect(screen.getByRole("cell", { name: "ok" })).toBeTruthy();
+    expect(screen.getByRole("cell", { name: "true" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Table" }).getAttribute("aria-pressed")).toBe("true");
     fireEvent.click(screen.getByRole("button", { name: "Raw" }));
     expect(document.querySelector(".result-body")?.textContent).toBe(response.text);
     expect(screen.getByRole("button", { name: "Raw" }).getAttribute("aria-pressed")).toBe("true");
-    fireEvent.click(screen.getByRole("button", { name: "Formatted" }));
-    expect(document.querySelector(".result-body")?.textContent).toContain('"items": [');
+    fireEvent.click(screen.getByRole("button", { name: "Table" }));
+    expect(screen.getByRole("table")).toBeTruthy();
+    expect(screen.getByRole("cell", { name: /1/ })).toBeTruthy();
   });
 
   test("does not show the JSON view switch for plain text or binary content", () => {
@@ -222,7 +225,8 @@ describe("Playground browser interactions", () => {
     }
 
     render(<Viewer />);
-    expect(document.querySelector(".result-body")?.textContent).toContain('"ok": true');
+    expect(screen.getByRole("table")).toBeTruthy();
+    expect(screen.getByRole("cell", { name: "ok" })).toBeTruthy();
     fireEvent.click(screen.getByRole("tab", { name: /headers/i }));
     expect(document.querySelector(".doc-row")?.textContent).toContain("application/json");
     fireEvent.click(screen.getByRole("tab", { name: /timeline/i }));
