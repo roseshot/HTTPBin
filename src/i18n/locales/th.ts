@@ -46,6 +46,8 @@ const messages = {
   "sending": "กำลังส่ง...",
   "cancel": "ยกเลิกคำขอ",
   "format": "รูปแบบ",
+  "formatted": "จัดรูปแบบแล้ว",
+  "raw": "ดิบ",
   "emptyBody": "(เนื้อหาตอบกลับว่าง)",
   "binaryReceived": "ได้รับการตอบกลับแบบไบนารี ใช้ cURL ตรวจสอบไบต์ต้นฉบับ",
   "unexpectedHtmlTitle": "ได้รับการตอบกลับ HTML ที่ไม่คาดคิด",

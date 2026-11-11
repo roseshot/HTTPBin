@@ -46,6 +46,8 @@ const messages = {
   "sending": "Gönderiliyor...",
   "cancel": "İsteği iptal et",
   "format": "Biçim",
+  "formatted": "Biçimlendirilmiş",
+  "raw": "Ham",
   "emptyBody": "(boş yanıt gövdesi)",
   "binaryReceived": "İkili yanıt alındı. Ham baytları incelemek için cURL kullanın.",
   "unexpectedHtmlTitle": "Beklenmeyen HTML yanıtı",

@@ -46,6 +46,8 @@ const messages = {
   "sending": "Отправка...",
   "cancel": "Отменить запрос",
   "format": "Формат",
+  "formatted": "Форматированный",
+  "raw": "Исходный",
   "emptyBody": "(пустое тело ответа)",
   "binaryReceived": "Получен двоичный ответ. Просмотрите исходные байты через cURL.",
   "unexpectedHtmlTitle": "Неожиданный HTML-ответ",

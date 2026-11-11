@@ -46,6 +46,8 @@ const messages = {
   "sending": "भेजा जा रहा है...",
   "cancel": "अनुरोध रद्द करें",
   "format": "प्रारूप",
+  "formatted": "स्वरूपित",
+  "raw": "मूल",
   "emptyBody": "(खाली प्रतिक्रिया बॉडी)",
   "binaryReceived": "बाइनरी प्रतिक्रिया मिली। मूल बाइट्स देखने के लिए cURL उपयोग करें।",
   "unexpectedHtmlTitle": "अप्रत्याशित HTML प्रतिक्रिया",

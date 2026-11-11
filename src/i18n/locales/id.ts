@@ -46,6 +46,8 @@ const messages = {
   "sending": "Mengirim...",
   "cancel": "Batalkan permintaan",
   "format": "Format",
+  "formatted": "Diformat",
+  "raw": "Mentah",
   "emptyBody": "(isi respons kosong)",
   "binaryReceived": "Respons biner diterima. Gunakan cURL untuk memeriksa byte asli.",
   "unexpectedHtmlTitle": "Respons HTML tidak terduga",

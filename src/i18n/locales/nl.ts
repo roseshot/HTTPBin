@@ -46,6 +46,8 @@ const messages = {
   "sending": "Bezig met verzenden...",
   "cancel": "Verzoek annuleren",
   "format": "Formaat",
+  "formatted": "Opgemaakt",
+  "raw": "Onbewerkt",
   "emptyBody": "(lege antwoordinhoud)",
   "binaryReceived": "Binair antwoord ontvangen. Gebruik cURL om de ruwe bytes te bekijken.",
   "unexpectedHtmlTitle": "Onverwacht HTML-antwoord",

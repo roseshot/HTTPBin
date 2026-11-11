@@ -46,6 +46,8 @@ const messages = {
   "sending": "送信中...",
   "cancel": "リクエストを中止",
   "format": "形式",
+  "formatted": "整形済み",
+  "raw": "生データ",
   "emptyBody": "（空のレスポンス本文）",
   "binaryReceived": "バイナリレスポンスを受信しました。生データは cURL で確認してください。",
   "unexpectedHtmlTitle": "予期しない HTML レスポンス",

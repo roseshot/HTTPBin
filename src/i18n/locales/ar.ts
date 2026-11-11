@@ -46,6 +46,8 @@ const messages = {
   "sending": "جارٍ الإرسال...",
   "cancel": "إلغاء الطلب",
   "format": "التنسيق",
+  "formatted": "منسق",
+  "raw": "خام",
   "emptyBody": "(استجابة فارغة)",
   "binaryReceived": "تم استلام استجابة ثنائية. استخدم cURL لفحص البايتات الخام.",
   "unexpectedHtmlTitle": "استجابة HTML غير متوقعة",

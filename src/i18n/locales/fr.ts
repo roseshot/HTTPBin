@@ -46,6 +46,8 @@ const messages = {
   "sending": "Envoi en cours...",
   "cancel": "Annuler la requête",
   "format": "Format",
+  "formatted": "Formaté",
+  "raw": "Brut",
   "emptyBody": "(corps vide)",
   "binaryReceived": "Réponse binaire reçue. Utilisez cURL pour examiner les octets bruts.",
   "unexpectedHtmlTitle": "Réponse HTML inattendue",

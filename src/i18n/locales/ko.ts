@@ -46,6 +46,8 @@ const messages = {
   "sending": "전송 중...",
   "cancel": "요청 취소",
   "format": "형식",
+  "formatted": "서식 적용",
+  "raw": "원본",
   "emptyBody": "(빈 응답 본문)",
   "binaryReceived": "바이너리 응답을 받았습니다. 원시 바이트는 cURL로 확인하세요.",
   "unexpectedHtmlTitle": "예기치 않은 HTML 응답",

@@ -1,4 +1,4 @@
-import type { Dispatch, SetStateAction } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import { Clock3, Code2, Send, ShieldCheck } from "lucide-react";
 import { TabsList, TabsPanel, TabsRoot, TabsTab } from "../../components/ui/tabs";
 import { useI18n } from "../../i18n";
@@ -22,6 +22,7 @@ interface Props {
 
 export function ResponseViewer({ result, responseTab, setResponseTab }: Props) {
   const { t, formatNumber } = useI18n();
+  const [jsonView, setJsonView] = useState<"formatted" | "raw">("formatted");
   return (
     <>
           <div className="response-summary"><div className="caption" style={{ margin: 0 }}><Code2 size={14} /> {t("response")}</div>
@@ -30,11 +31,17 @@ export function ResponseViewer({ result, responseTab, setResponseTab }: Props) {
           {result ? <TabsRoot value={responseTab} onValueChange={(value) => (value === "body" || value === "headers" || value === "timeline") && setResponseTab(value)} className="response-tabs">
             <TabsList className="tab-list"><TabsTab className="tab-trigger" value="body">{t("body")}</TabsTab><TabsTab className="tab-trigger" value="headers">{t("headers")} <span className="counter">{result.headers.length}</span></TabsTab><TabsTab className="tab-trigger" value="timeline">{t("timeline")} <span className="counter">{result.chunks}</span></TabsTab></TabsList>
             <TabsPanel value="body" className="tab-panel">
-              <div className="editor-label">{t("format")}: <strong>{contentKind(result.contentType)}</strong> · {result.contentType}</div>
+              <div className="response-body-toolbar">
+                <div className="editor-label">{t("format")}: <strong>{contentKind(result.contentType)}</strong> · {result.contentType}</div>
+                {contentKind(result.contentType) === "JSON" && result.text.length > 0 && <div className="json-view-switch" role="group" aria-label={t("format")}>
+                  <button type="button" aria-pressed={jsonView === "formatted"} onClick={() => setJsonView("formatted")}>{t("formatted")}</button>
+                  <button type="button" aria-pressed={jsonView === "raw"} onClick={() => setJsonView("raw")}>{t("raw")}</button>
+                </div>}
+              </div>
               {result.unexpectedHtml ? <div className="response-placeholder" aria-live="polite"><strong>{t("unexpectedHtmlTitle")}</strong><p>{t("unexpectedHtmlHelp")}</p></div> :
                 result.imageUrl ? <img className="image-preview" src={result.imageUrl} alt={t("imagePreview")} /> :
                 contentKind(result.contentType) === "BINARY" ? <div className="empty-note">{t("binaryReceived")} ({formatNumber(result.bytes)} B)</div> :
-                <pre className="result-body">{pretty(result.text, result.contentType) || t("emptyBody")}</pre>}
+                <pre className="result-body">{(jsonView === "raw" ? result.text : pretty(result.text, result.contentType)) || t("emptyBody")}</pre>}
               {result.warning && <p className="result-hint">{result.warning}</p>}
               {result.redirected && <p className="result-hint">{t("finalUrl")}: {result.finalUrl}</p>}
             </TabsPanel>

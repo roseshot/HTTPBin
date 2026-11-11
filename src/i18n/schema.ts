@@ -56,6 +56,8 @@ export const english = {
   "sending": "Sending...",
   "cancel": "Cancel request",
   "format": "Format",
+  "formatted": "Formatted",
+  "raw": "Raw",
   "emptyBody": "(empty response body)",
   "binaryReceived": "Binary response received. Use cURL to inspect the raw bytes.",
   "unexpectedHtmlTitle": "Unexpected HTML response",

@@ -46,6 +46,8 @@ const messages = {
   "sending": "Đang gửi...",
   "cancel": "Hủy yêu cầu",
   "format": "Định dạng",
+  "formatted": "Đã định dạng",
+  "raw": "Nguyên bản",
   "emptyBody": "(phản hồi rỗng)",
   "binaryReceived": "Đã nhận phản hồi nhị phân. Dùng cURL để xem các byte gốc.",
   "unexpectedHtmlTitle": "Phản hồi HTML không mong đợi",

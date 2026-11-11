@@ -161,6 +161,45 @@ describe("Playground browser interactions", () => {
     expect(document.querySelector(".doc-row")?.textContent).toContain("text/html");
   });
 
+  test("switches JSON responses between formatted and exact raw text", () => {
+    const response: Result = {
+      status: 200, statusText: "OK", elapsed: 12,
+      headers: [["content-type", "application/json"]],
+      text: '{  "ok":true, "items":[1,2] }\n',
+      bytes: 32, contentType: "application/json",
+      finalUrl: "https://example.com/get",
+      redirected: false, chunks: 1, timeline: [],
+    };
+    render(<I18nProvider>
+      <ResponseViewer result={response} responseTab="body" setResponseTab={() => {}} />
+    </I18nProvider>);
+    expect(document.querySelector(".result-body")?.textContent).toContain('"ok": true');
+    expect(screen.getByRole("button", { name: "Formatted" }).getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(screen.getByRole("button", { name: "Raw" }));
+    expect(document.querySelector(".result-body")?.textContent).toBe(response.text);
+    expect(screen.getByRole("button", { name: "Raw" }).getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(screen.getByRole("button", { name: "Formatted" }));
+    expect(document.querySelector(".result-body")?.textContent).toContain('"items": [');
+  });
+
+  test("does not show the JSON view switch for plain text or binary content", () => {
+    const plain: Result = {
+      status: 200, statusText: "OK", elapsed: 1,
+      headers: [["content-type", "text/plain"]], text: "hello",
+      bytes: 5, contentType: "text/plain",
+      finalUrl: "https://example.com/get",
+      redirected: false, chunks: 1, timeline: [],
+    };
+    const { rerender } = render(<I18nProvider>
+      <ResponseViewer result={plain} responseTab="body" setResponseTab={() => {}} />
+    </I18nProvider>);
+    expect(screen.queryByRole("button", { name: "Raw" })).toBeNull();
+    rerender(<I18nProvider>
+      <ResponseViewer result={{ ...plain, contentType: "application/octet-stream" }} responseTab="body" setResponseTab={() => {}} />
+    </I18nProvider>);
+    expect(screen.queryByRole("button", { name: "Raw" })).toBeNull();
+  });
+
   test("shows response body and headers in the selected tab", () => {
     const response: Result = {
       status: 200,

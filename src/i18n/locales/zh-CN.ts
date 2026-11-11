@@ -46,6 +46,8 @@ const messages = {
   "sending": "发送中...",
   "cancel": "取消请求",
   "format": "格式",
+  "formatted": "格式化",
+  "raw": "原始",
   "emptyBody": "（空响应体）",
   "binaryReceived": "已收到二进制响应，请使用 cURL 检查原始字节。",
   "unexpectedHtmlTitle": "非预期的 HTML 响应",
