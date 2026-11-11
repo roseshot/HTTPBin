@@ -53,7 +53,7 @@
 .response-code.bad { color: var(--red) !important; }
 .response-body-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 9px; margin-bottom: 9px; }
 .response-body-toolbar .editor-label { margin: 0; overflow-wrap: anywhere; }
-.json-view-switch { display: inline-flex; flex: 0 0 auto; gap: 2px; padding: 3px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel-2); }
+.json-view-switch { display: inline-flex; flex: 0 0 auto; gap: 2px; margin: 0; min-width: 0; padding: 3px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel-2); }
 .json-view-switch button { border: 0; border-radius: 5px; padding: 5px 9px; background: transparent; color: var(--muted); font-size: 11px; font-weight: 650; cursor: pointer; }
 .json-view-switch button:hover { color: var(--text); background: var(--panel-3); }
 .json-view-switch button[aria-pressed="true"] { background: var(--bg); color: var(--blue); box-shadow: 0 1px 3px #0002; }

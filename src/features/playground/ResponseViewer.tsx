@@ -33,10 +33,10 @@ export function ResponseViewer({ result, responseTab, setResponseTab }: Props) {
             <TabsPanel value="body" className="tab-panel">
               <div className="response-body-toolbar">
                 <div className="editor-label">{t("format")}: <strong>{contentKind(result.contentType)}</strong> · {result.contentType}</div>
-                {contentKind(result.contentType) === "JSON" && result.text.length > 0 && <div className="json-view-switch" role="group" aria-label={t("format")}>
+                {contentKind(result.contentType) === "JSON" && result.text.length > 0 && <fieldset className="json-view-switch" aria-label={t("format")}>
                   <button type="button" aria-pressed={jsonView === "formatted"} onClick={() => setJsonView("formatted")}>{t("formatted")}</button>
                   <button type="button" aria-pressed={jsonView === "raw"} onClick={() => setJsonView("raw")}>{t("raw")}</button>
-                </div>}
+                </fieldset>}
               </div>
               {result.unexpectedHtml ? <div className="response-placeholder" aria-live="polite"><strong>{t("unexpectedHtmlTitle")}</strong><p>{t("unexpectedHtmlHelp")}</p></div> :
                 result.imageUrl ? <img className="image-preview" src={result.imageUrl} alt={t("imagePreview")} /> :
