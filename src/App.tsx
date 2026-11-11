@@ -15,6 +15,9 @@ import { useI18n } from "./i18n";
 import type { MessageKey } from "./i18n/schema";
 import StandardsPage from "./StandardsPage";
 
+declare const __HTTPBIN_GIT_VERSION__: string;
+const gitVersion = typeof __HTTPBIN_GIT_VERSION__ !== "undefined" ? __HTTPBIN_GIT_VERSION__ : "dev";
+
 type Theme = "dark" | "light";
 const groupKeys: Record<Endpoint["group"], { title: MessageKey; description: MessageKey }> = {
   "HTTP Methods": { title: "groupMethods", description: "descriptionMethods" },
@@ -164,7 +167,7 @@ export default function App() {
 
   return <div className={"shell" + (showStandards ? " standards-shell" : "")}>
     <header className="topbar">
-      <a className="brand" href="/" aria-label="HTTPBin home"><span className="brand-icon"><Terminal size={20} strokeWidth={2.4} /></span><div>http<span>bin</span></div><span className="product-label">Runs on Cloudflare Workers</span></a>
+      <a className="brand" href="/" aria-label="HTTPBin home"><span className="brand-icon"><Terminal size={20} strokeWidth={2.4} /></span><div>http<span>bin</span><span className="git-version" title={"Git version: " + gitVersion}>{gitVersion}</span></div><span className="product-label">Runs on Cloudflare Workers</span></a>
       <nav className="topbar-right" aria-label="Site navigation">
         <a className="top-link" href={href("/docs")}><Layers3 size={15} /><span>{t("apiExplorer")}</span></a>
         <a className="top-link" href="/openapi.json" target="_blank" rel="noreferrer"><FileJson2 size={15} /><span>OpenAPI</span></a>

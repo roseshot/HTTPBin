@@ -76,6 +76,8 @@ jobs:
 
       - uses: actions/checkout@v7
         if: steps.changes.outputs.run == 'true'
+        with:
+          fetch-depth: 0 # Include tags for accurate build-version metadata
       - uses: oven-sh/setup-bun@v2
         if: steps.changes.outputs.run == 'true'
       - run: bun install --frozen-lockfile
