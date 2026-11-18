@@ -1,65 +1,52 @@
 name: Dependabot auto-merge
 
+# The unprivileged PR CI runs first; this separate, trusted workflow merges only
+# the exact Dependabot commit that passed it. No version/type filters.
 on:
-  pull_request_target:
-    types: [opened, reopened, synchronize, ready_for_review]
-  schedule:
-    - cron: "17 1 * * *"
-  workflow_dispatch:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
 
 permissions:
   contents: write
   pull-requests: write
 
-concurrency:
-  group: dependabot-auto-merge
-  cancel-in-progress: false
-
 jobs:
   merge:
+    name: Merge successful Dependabot updates
     if: >-
-      (github.event_name == 'pull_request_target' &&
-       github.event.pull_request.user.login == 'dependabot[bot]' &&
-       github.event.pull_request.base.ref == 'main') ||
-      github.event_name == 'schedule' ||
-      github.event_name == 'workflow_dispatch'
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
-      - name: Enable auto-merge for eligible Dependabot pull requests
+      - name: Merge Dependabot PR at its tested SHA
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
-          EVENT_NAME: ${{ github.event_name }}
-          EVENT_PR: ${{ github.event.pull_request.number || 0 }}
+          TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
+          EVENT_PRS: ${{ toJSON(github.event.workflow_run.pull_requests) }}
         run: |
           set -euo pipefail
 
-          gh api --paginate "repos/$REPOSITORY/pulls?state=open&per_page=100" |
-            jq -c --arg repo "$REPOSITORY" '
-              .[] | select(
-                .user.login == "dependabot[bot]" and
-                .base.ref == "main" and
-                .head.repo.full_name == $repo and
-                .draft == false
-              )
-            ' > "$RUNNER_TEMP/dependabot-prs.jsonl"
+          prs=$(jq -r '.[].number' <<< "$EVENT_PRS")
+          # GitHub may omit pull_requests from workflow_run for Dependabot.
+          if [[ -z "$prs" ]]; then
+            prs=$(gh api "repos/$REPOSITORY/commits/$TESTED_SHA/pulls" --jq '.[].number')
+          fi
 
-          while IFS= read -r pr; do
-            number="$(jq -r '.number' <<< "$pr")"
-            head="$(jq -r '.head.sha' <<< "$pr")"
-
-            if [[ "$EVENT_NAME" == "pull_request_target" && "$number" != "$EVENT_PR" ]]; then
+          while IFS= read -r number; do
+            [[ -n "$number" ]] || continue
+            pr=$(gh api "repos/$REPOSITORY/pulls/$number")
+            if ! jq -e --arg repo "$REPOSITORY" --arg sha "$TESTED_SHA" '
+              .user.login == "dependabot[bot]" and
+              .state == "open" and
+              .head.sha == $sha and
+              .head.repo.full_name == $repo
+            ' <<< "$pr" >/dev/null; then
               continue
             fi
 
-            if [[ "$(jq -r '.auto_merge != null' <<< "$pr")" == "true" ]]; then
-              continue
-            fi
-
-            if gh pr merge "$number" --repo "$REPOSITORY" --squash --auto --match-head-commit "$head"; then
-              echo "Auto-merge enabled for pull request #$number"
-            else
-              echo "::warning::Could not enable auto-merge for pull request #$number"
-            fi
-          done < "$RUNNER_TEMP/dependabot-prs.jsonl"
+            gh api --method PUT "repos/$REPOSITORY/pulls/$number/merge" \
+              -f sha="$TESTED_SHA" -f merge_method=squash
+          done <<< "$prs"
