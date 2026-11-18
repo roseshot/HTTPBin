@@ -69,6 +69,12 @@ The default `workers.dev` and preview URLs are disabled in `wrangler.jsonc`.
 
 The service is intended for testing. Do not send real credentials or sensitive data to public instances.
 
+## Dependabot auto-merge
+
+Dependabot opens Bun and GitHub Actions dependency-update PRs on its configured weekly schedule. Every Dependabot PR is squash-merged after the `CI` pull-request workflow succeeds, regardless of update type or version (including major, minor, patch, and prerelease). No manual auto-merge opt-in is needed.
+
+The [Dependabot auto-merge workflow](.github/workflows/dependabot-auto-merge.yml) confirms the PR is authored by `dependabot[bot]` and that its current head SHA exactly matches the successful CI run before merging. Failed or cancelled CI cannot trigger a merge. Merge conflicts and enforced GitHub repository rules may still block merging.
+
 ## Contributing
 
 Issues and pull requests are welcome. Please run the checks in [Development](#development) before submitting changes.
